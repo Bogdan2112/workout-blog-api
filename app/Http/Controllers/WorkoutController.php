@@ -15,6 +15,10 @@ class WorkoutController extends Controller
     {
         $workouts = $week->workouts;
 
+        // $workouts = DB::table('workouts')
+        // ->where('week_id', $week->id)
+        // ->get();
+
         return response()->json($workouts);
     }
 

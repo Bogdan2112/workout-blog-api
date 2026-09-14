@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Week;
+use Illuminate\Support\Facades\DB;
 
 class WeekController extends Controller
 {
@@ -13,6 +14,8 @@ class WeekController extends Controller
     public function index()
     {
         $weeks = Week::all();
+
+        // $weeks = DB::table('weeks')->get();
 
         return response()->json($weeks);
     }
