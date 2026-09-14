@@ -10,5 +10,7 @@ Route::get('/user', function (Request $request) {
 
 Route::get('/weeks', [WeekController::class, 'index']);
 Route::post('/weeks', [WeekController::class, 'store']);
-Route::get('/weeks/{id}',[WeekController::class, 'show']);  
-Route::put('/weeks/{id}',[WeekController::class, 'update']);
+
+Route::get('/weeks/{week}',[WeekController::class, 'show']);  
+Route::put('/weeks/{week}',[WeekController::class, 'update']);
+Route::delete('/weeks/{week}',[WeekController::class, 'destroy']);

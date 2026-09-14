@@ -37,9 +37,15 @@ class WeekController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Week $week) // string $id
     {
-        $week = Week::find($id);
+        // $week = Week::find($id);
+        
+        // if(!$week){
+        //     return response()->json([
+        //         'message' => 'Week not found'
+        //     ], 404);
+        // }
 
         return response()->json($week);
     }
@@ -47,10 +53,8 @@ class WeekController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Week $week)
     {
-        $week = Week::find($id);
-
         $request->validate([
             'name' => 'required|string|max:255'
         ]);
@@ -64,8 +68,12 @@ class WeekController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
-    {
-        //
+    public function destroy(Week $week)
+    {   
+        $week->delete();
+
+        return response()->json([
+            'message' => 'Week deleted succesfully'
+        ]);
     }
 }
