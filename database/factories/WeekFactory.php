@@ -18,8 +18,13 @@ class WeekFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->words(2, true),
-            'user_id' => 1
+            'name' => fake()->randomElement([
+                'Push Week',
+                'Pull Week',
+                'Leg Week',
+                'Strength Week',
+                'Hypertrophy Week',
+            ]),
         ];
     }
 }

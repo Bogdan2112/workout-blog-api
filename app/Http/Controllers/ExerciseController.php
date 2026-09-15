@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Workout;
 use App\Models\Exercise;
+use App\Http\Requests\StoreExerciseRequest;
+use App\Http\Requests\UpdateExerciseRequest;
 
 class ExerciseController extends Controller
 {
@@ -23,9 +25,9 @@ class ExerciseController extends Controller
      */
     public function store(Request $request, Workout $workout)
     {
-        $request->validate([
-            'name' => 'required|string|max:255'
-        ]);
+        // $request->validate([
+        //     'name' => 'required|string|max:255'
+        // ]);
 
         $exercise = $workout->exercises()->create([
             'name' => $request->name
@@ -45,11 +47,11 @@ class ExerciseController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Exercise $exercise)
+    public function update(UpdateExerciseRequest $request, Exercise $exercise)
     {
-        $request->validate([
-            'name' => 'required|string|max:255'
-        ]);
+        // $request->validate([
+        //     'name' => 'required|string|max:255'
+        // ]);
 
         $exercise->name = $request->name;
         $exercise->save();

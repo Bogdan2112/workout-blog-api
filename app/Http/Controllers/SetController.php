@@ -5,7 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Exercise;
 use App\Models\Set;
-
+use App\Http\Requests\StoreSetRequest;
+use App\Http\Requests\UpdateSetRequest;
 
 class SetController extends Controller
 {
@@ -22,12 +23,12 @@ class SetController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request, Exercise $exercise)
+    public function store(StoreSetRequest $request, Exercise $exercise)
     {
-        $request->validate([
-            'kg' => 'required|numeric',
-            'reps' => 'required|integer'
-        ]);
+        // $request->validate([
+        //     'kg' => 'required|numeric',
+        //     'reps' => 'required|integer'
+        // ]);
 
         $set = $exercise->sets()->create([
             'kg' => $request->kg,
@@ -48,15 +49,15 @@ class SetController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Set $set)
+    public function update(UpdateSetRequest $request, Set $set)
     {
-        $request->validate([
-            // 'kg' => 'required|numeric',
-            // 'reps' => 'required|integer'
+        // $request->validate([
+        //     // 'kg' => 'required|numeric',
+        //     // 'reps' => 'required|integer'
 
-            'kg' => 'sometimes|numeric',
-            'reps' => 'sometimes|integer'
-        ]);
+        //     'kg' => 'sometimes|numeric',
+        //     'reps' => 'sometimes|integer'
+        // ]);
 
         if($request->has('kg')){
             $set->kg = $request->kg;
