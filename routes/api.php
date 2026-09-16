@@ -6,10 +6,14 @@ use App\Http\Controllers\WeekController;
 use App\Http\Controllers\WorkoutController;
 use App\Http\Controllers\ExerciseController;
 use App\Http\Controllers\SetController;
+use App\Http\Controllers\AuthController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
+
+// Userr routes
+Route::post('/login', [AuthController::class, 'login']);
 
 // Week routes
 Route::get('/weeks', [WeekController::class, 'index']);
@@ -44,3 +48,4 @@ Route::put('/sets/{set}', [SetController::class, 'update']);
 Route::delete('/sets/{set}', [SetController::class, 'destroy']);
 
 Route::patch('/sets/{set}', [SetController::class, 'update']);
+

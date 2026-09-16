@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Requests\StoreWeekRequest;
 use App\Http\Requests\UpdateWeekRequest;
 use App\Http\Resources\WeekResource;
+use Exception;
+use Throwable;
 
 class WeekController extends Controller
 {
@@ -27,8 +29,8 @@ class WeekController extends Controller
         // ---- Eager loading ----
 
         //$weeks = Week::with('workouts')->get();
-        $weeks = Week::with('workouts.exercises')->paginate(10); //get()
-        return WeekResource::collection($weeks);
+        // $weeks = Week::with('workouts.exercises')->paginate(10); //get()
+        // return WeekResource::collection($weeks);
 
         // return response()->json([
         //     'weeks' => $weeks,
@@ -67,6 +69,41 @@ class WeekController extends Controller
         // }
 
         // return WeekResource::collection($weeks->get()); //return WeekResource::collection($weeks);
+
+        // ---- Sorting ----
+        $weeks = Week::query();
+
+        // Filtering
+         if($request->name){
+            $weeks->where('name', $request->name);
+        }
+
+        // Sorting
+        // $weeks->orderBy('name');
+        $allowedSorts = ['name', 'created_at'];
+        $allowedDirections = ['asc', 'desc'];
+        // if(in_array($request->sort, $allowedSorts)){
+        //     $weeks->orderBy($request->sort);
+        // }
+
+        if($request->sort){
+            if(!in_array($request->sort, $allowedSorts)){
+                return response()->json([
+                'message' => 'Invalid sort field'
+            ], 404);
+            }
+            if($request->direction && !in_array($request->direction, $allowedDirections)){
+                return response()->json([
+                    'message' => 'Invalid direction field'
+                ], 404);
+            }
+            $weeks->orderBy(
+                $request->sort,
+                $request->direction ?? 'asc');
+        }
+
+        
+        return WeekResource::collection($weeks->paginate(10));
     }
 
     /**
@@ -86,7 +123,8 @@ class WeekController extends Controller
      * Display the specified resource.
      */
     public function show(Week $week) // string $id
-    {
+    {   
+        
         // $week = Week::find($id);
         
         // if(!$week){
@@ -96,6 +134,7 @@ class WeekController extends Controller
         // }
 
         // return response()->json($week);
+        // throw new Exception('Test error');
         $week->load('workouts');
         return new WeekResource($week);
     }
