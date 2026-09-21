@@ -10,6 +10,7 @@ use App\Http\Requests\UpdateWeekRequest;
 use App\Http\Resources\WeekResource;
 use Exception;
 use Throwable;
+use Illuminate\Support\Facades\Gate;
 
 class WeekController extends Controller
 {
@@ -70,8 +71,10 @@ class WeekController extends Controller
 
         // return WeekResource::collection($weeks->get()); //return WeekResource::collection($weeks);
 
-        // ---- Sorting ----
-        $weeks = Week::query();
+        // ----  ----
+        // $weeks = Week::query();
+
+        $weeks = $request->user()->weeks();
 
         // Filtering
          if($request->name){
@@ -113,10 +116,10 @@ class WeekController extends Controller
     {
         $week = Week::create([
             'name' => $request->name,
-            'user_id' => 1
+            'user_id' => $request->user()->id
         ]);
 
-        return response()->json($request->all());
+        return response()->json($week, 201);
     }
 
     /**
@@ -135,6 +138,7 @@ class WeekController extends Controller
 
         // return response()->json($week);
         // throw new Exception('Test error');
+        Gate::authorize('view', $week);
         $week->load('workouts');
         return new WeekResource($week);
     }
@@ -148,8 +152,12 @@ class WeekController extends Controller
         //     'name' => 'required|string|max:255'
         // ]);
 
-        $week->name = $request->name;
-        $week->save();
+        Gate::authorize('update', $week);
+
+        // $week->name = $request->name;
+        // $week->save();
+
+        $week->update($request->validated());
 
         return response()->json($week);
     }
@@ -159,6 +167,8 @@ class WeekController extends Controller
      */
     public function destroy(Week $week)
     {   
+        Gate::authorize('delete', $week);
+        
         $week->delete();
 
         return response()->json([
