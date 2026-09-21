@@ -12,7 +12,7 @@ class UpdateWorkoutRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,7 @@ class UpdateWorkoutRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'sometimes|string|max:255'
+            'name' => 'required|string|max:255'
         ];
     }
 }

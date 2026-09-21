@@ -58,5 +58,37 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::patch('/sets/{set}', [SetController::class, 'update']);
 
+    // Gate
+    Route::get('/test-gate', function () {
+
+    Gate::authorize('test-gate');
+
+    return response()->json([
+        'message' => 'Gate passed'
+    ]);
+    });
+
+    // Test
+
+//     Route::get('/test-permission', function (Request $request) {
+
+//     if (!$request->user()->can('delete posts')) {
+//         abort(403);
+//     }
+
+//     return response()->json([
+//         'message' => 'Permission passed'
+//     ]);
+// });
+
+Route::middleware('auth:sanctum')->group(function () {
+
+    Route::get('/admin-test', function () {
+        return response()->json([
+            'message' => 'Permission passed'
+        ]);
+    })->middleware('can:delete posts');
+
 });
 
+});

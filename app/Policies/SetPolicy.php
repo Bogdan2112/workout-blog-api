@@ -2,57 +2,57 @@
 
 namespace App\Policies;
 
+use App\Models\Set;
 use App\Models\User;
-use App\Models\Week;
+use App\Models\Exercise;
 use Illuminate\Auth\Access\Response;
 
-class WeekPolicy
+class SetPolicy
 {
     /**
      * Determine whether the user can view any models.
      */
     public function viewAny(User $user): bool
     {
-        return true;
+        return false;
     }
 
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Week $week): bool
+    public function view(User $user, Set $set): bool
     {
-        return $user->id === $week->user_id;
+        return $user->id === $set->exercise->workout->week->user_id;
     }
 
     /**
      * Determine whether the user can create models.
      */
-    public function create(User $user): bool
+    public function create(User $user, Exercise $exercise): bool
     {
-        return true;
+        return $user->id === $exercise->workout->week->user_id;
     }
 
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Week $week): bool
+    public function update(User $user, Set $set): bool
     {
-        return $user->id === $week->user_id;
+        return $user->id === $set->exercise->workout->week->user_id;
     }
 
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, Week $week): bool
+    public function delete(User $user, Set $set): bool
     {
-        // return $user->id === $week->user_id;
-           return $user->id === $week->user_id || $user->can('delete posts');
+        return $user->id === $set->exercise->workout->week->user_id;
     }
 
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, Week $week): bool
+    public function restore(User $user, Set $set): bool
     {
         return false;
     }
@@ -60,7 +60,7 @@ class WeekPolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, Week $week): bool
+    public function forceDelete(User $user, Set $set): bool
     {
         return false;
     }

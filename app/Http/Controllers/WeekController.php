@@ -114,6 +114,8 @@ class WeekController extends Controller
      */
     public function store(StoreWeekRequest $request)
     {
+        Gate::authorize('create', Week::class);
+        
         $week = Week::create([
             'name' => $request->name,
             'user_id' => $request->user()->id

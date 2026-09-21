@@ -7,6 +7,8 @@ use App\Models\Exercise;
 use App\Models\Set;
 use App\Http\Requests\StoreSetRequest;
 use App\Http\Requests\UpdateSetRequest;
+use Illuminate\Support\Facades\Gate;
+
 
 class SetController extends Controller
 {
@@ -15,6 +17,7 @@ class SetController extends Controller
      */
     public function index(Exercise $exercise)
     {
+        Gate::authorize('view', $exercise);
         $sets = $exercise->sets;
 
         return response()->json($sets);
@@ -29,7 +32,7 @@ class SetController extends Controller
         //     'kg' => 'required|numeric',
         //     'reps' => 'required|integer'
         // ]);
-
+        Gate::authorize('create', [Set::class, $exercise]); 
         $set = $exercise->sets()->create([
             'kg' => $request->kg,
             'reps' => $request->reps
@@ -43,6 +46,7 @@ class SetController extends Controller
      */
     public function show(Set $set)
     {
+        Gate::authorize('view', $set);
         return response()->json($set);   
     }
 
@@ -58,7 +62,7 @@ class SetController extends Controller
         //     'kg' => 'sometimes|numeric',
         //     'reps' => 'sometimes|integer'
         // ]);
-
+        Gate::authorize('update', $set);
         if($request->has('kg')){
             $set->kg = $request->kg;
         }
@@ -76,6 +80,7 @@ class SetController extends Controller
      */
     public function destroy(Set $set)
     {
+        Gate::authorize('deslete', $set);
         $set->delete();
 
         return response()->json([

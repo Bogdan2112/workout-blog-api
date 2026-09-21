@@ -7,6 +7,7 @@ use App\Models\Week;
 use App\Models\Workout;
 use App\Http\Requests\StoreWorkoutRequest;
 use App\Http\Requests\UpdateWorkoutRequest;
+use Illuminate\Support\Facades\Gate;
 
 class WorkoutController extends Controller
 {
@@ -15,6 +16,7 @@ class WorkoutController extends Controller
      */
     public function index(Week $week)
     {
+        Gate::authorize('view', $week);
         $workouts = $week->workouts;
 
         // $workouts = DB::table('workouts')
@@ -32,6 +34,7 @@ class WorkoutController extends Controller
         // $request->validate([
         //     'name' => 'required|string|max:255'
         // ]);
+        Gate::authorize('create', [Workout::class, $week]);
 
         $workout = $week->workouts()->create([
             'name' => $request->name,
@@ -45,6 +48,9 @@ class WorkoutController extends Controller
      */
     public function show(Workout $workout)
     {
+        
+        Gate::authorize('view', $workout);
+
         return response()->json($workout);
     }
 
@@ -57,9 +63,13 @@ class WorkoutController extends Controller
         //     'name' => 'required|string|max:255'
         // ]);
 
-        $workout->name = $request->name;
-        $workout->save();
+        
+        Gate::authorize('update', $workout);
 
+        // $workout->name = $request->name;
+        // $workout->save();
+
+        $workout->update($request->validated());
         return response()->json($workout);
     }
 
@@ -68,6 +78,8 @@ class WorkoutController extends Controller
      */
     public function destroy(Workout $workout)
     {
+        Gate::authorize('delete', $workout);
+
         $workout->delete();
 
         return response()->json([

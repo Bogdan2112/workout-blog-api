@@ -7,6 +7,7 @@ use App\Models\Workout;
 use App\Models\Exercise;
 use App\Http\Requests\StoreExerciseRequest;
 use App\Http\Requests\UpdateExerciseRequest;
+use Illuminate\Support\Facades\Gate;
 
 class ExerciseController extends Controller
 {
@@ -15,20 +16,22 @@ class ExerciseController extends Controller
      */
     public function index(Workout $workout)
     {
+        Gate::authorize('view', $workout);
         $exercises = $workout->exercises;
 
         return response()->json($exercises);
-    }
+    }   
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request, Workout $workout)
+    public function store(StoreExerciseRequest $request, Workout $workout)
     {
         // $request->validate([
         //     'name' => 'required|string|max:255'
         // ]);
 
+        Gate::authorize('create', [Exercise::class, $workout]);
         $exercise = $workout->exercises()->create([
             'name' => $request->name
         ]);
@@ -41,6 +44,7 @@ class ExerciseController extends Controller
      */
     public function show(Exercise $exercise)
     {
+        Gate::authorize('view', $exercise); 
         return response()->json($exercise);
     }
 
@@ -52,9 +56,10 @@ class ExerciseController extends Controller
         // $request->validate([
         //     'name' => 'required|string|max:255'
         // ]);
-
-        $exercise->name = $request->name;
-        $exercise->save();
+        Get::authorize('update', $exercise);
+        // $exercise->name = $request->name;
+        // $exercise->save();
+        $exercise->update($request->validated());
 
         return response()->json($exercise);
     }
@@ -63,7 +68,8 @@ class ExerciseController extends Controller
      * Remove the specified resource from storage.
      */
     public function destroy(Exercise $exercise)
-    {
+    {   
+        Gate::authorize('delete', $exercise);
         $exercise->delete();
 
         return response()->json([
