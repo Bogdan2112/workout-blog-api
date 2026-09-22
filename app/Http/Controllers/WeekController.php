@@ -11,6 +11,7 @@ use App\Http\Resources\WeekResource;
 use Exception;
 use Throwable;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Cache;
 
 class WeekController extends Controller
 {
@@ -74,7 +75,18 @@ class WeekController extends Controller
         // ----  ----
         // $weeks = Week::query();
 
+        // Caching
         $weeks = $request->user()->weeks();
+        // $cacheKey = 'user' . $request->user()->id . 'weeks';
+        // $weeks = Cache::remember(
+        //     // 'user' . $request->user()->id. 'weeks',
+        //     $cacheKey,
+        //     60
+        //     ,
+        //     function () use ($request){
+        //         return $request->user()->weeks(); //->get()
+        //     }
+        // );
 
         // Filtering
          if($request->name){
@@ -121,6 +133,8 @@ class WeekController extends Controller
             'user_id' => $request->user()->id
         ]);
 
+        $cacheKey = 'user' . $request->user()->id . 'weeks';
+        Cache::forget($cacheKey);
         return response()->json($week, 201);
     }
 
@@ -141,7 +155,15 @@ class WeekController extends Controller
         // return response()->json($week);
         // throw new Exception('Test error');
         Gate::authorize('view', $week);
-        $week->load('workouts');
+        $cacheKey = 'week_' . $week->id;
+
+        $week = Cache::remember(
+            $cacheKey,
+            60,
+            function () use ($week) {
+                return $week->load('workouts');
+            }
+        );
         return new WeekResource($week);
     }
 
@@ -161,17 +183,26 @@ class WeekController extends Controller
 
         $week->update($request->validated());
 
+        $cacheKey = 'user' . $request->user()->id . 'weeks';
+        Cache::forget('week_' . $week->id);
+        Cache::forget($cacheKey);
+
         return response()->json($week);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Week $week)
+    public function destroy(Request $request,Week $week)
     {   
         Gate::authorize('delete', $week);
         
+        $weekId = $week->id;
         $week->delete();
+
+        $cacheKey = 'user' . $request->user()->id . 'weeks';
+        Cache::forget('week_' . $weekId);
+        Cache::forget($cacheKey);
 
         return response()->json([
             'message' => 'Week deleted succesfully'

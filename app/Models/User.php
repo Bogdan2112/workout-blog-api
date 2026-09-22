@@ -36,4 +36,9 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function weeks()
+    {
+        return $this->hasMany(Week::class);
+    }
 }

@@ -21,7 +21,10 @@ Route::post('/register', [AuthController::class, 'register']);
 // Route::post('/weeks', [WeekController::class, 'store'])
 //     ->middleware('auth:sanctum'); // POST /api/weeks poate fi accesat doar de un user autentificat.
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::prefix('v1')
+    ->middleware('auth:sanctum')
+    ->group(function(){
+
 // Log out
     Route::post('/logout', [AuthController::class, 'logout']);
 
@@ -91,4 +94,66 @@ Route::middleware('auth:sanctum')->group(function () {
 
 });
 
+Route::get('/admin-only', function () {
+    return response()->json([
+        'message' => 'Admin access granted'
+    ]);
+})->middleware('role:admin');
+
+// Throttling
+    Route::get('/rate-test', function(){
+        return response()->json([
+            'message' => 'Request accepted'
+        ]);
+    })->middleware('throttle:5,1');
+
+    Route::get('/rate-test-2', function(){
+        return response()->json([
+            'message' => 'Request accepted'
+        ]);
+    })->middleware('throttle:api');
+
 });
+
+Route::prefix('v2')
+    ->middleware('auth:sanctum')
+    ->group(function(){
+
+        Route::get('/weeks', function(Request $request){
+            return response()->json([
+                'version' => 'v2',
+                'data' => $request->user()->weeks()->get()
+            ]);
+        });
+
+    });
+
+Route::get('/header-version/weeks', function(Request $request){
+    // Route::get('/weeks', function(Request $request)
+    $version = $request->header('API-Version');
+
+    if($version == 1){
+        return response()->json([
+            'version' => 'v1',
+            'data' => $request->user()->weeks()->get()
+        ]);
+    }   
+
+    if($version == 2){
+        return response()->json([
+            'verion' => 'v2',
+            'data' => $request->user()
+                ->weeks()
+                ->with('workouts')
+                ->get()
+        ]);
+    }
+
+    return response()->json([
+        'message' => 'unsuported API verison'
+    ]);
+})->middleware('auth:sanctum');
+
+
+// 12|wV68tOfaUi2WZn2dw7wXOFQMKSDQVvPBt42rMo4Lc9d5db26
+
