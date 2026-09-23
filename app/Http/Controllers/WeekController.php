@@ -133,8 +133,6 @@ class WeekController extends Controller
             'user_id' => $request->user()->id
         ]);
 
-        $cacheKey = 'user' . $request->user()->id . 'weeks';
-        Cache::forget($cacheKey);
         return response()->json($week, 201);
     }
 
@@ -183,8 +181,9 @@ class WeekController extends Controller
 
         $week->update($request->validated());
 
-        $cacheKey = 'user' . $request->user()->id . 'weeks';
-        Cache::forget('week_' . $week->id);
+        // $cacheKey = 'user' . $request->user()->id . 'weeks';
+        // Cache::forget('week_' . $week->id);
+        $cacheKey = 'week_' . $week->id;
         Cache::forget($cacheKey);
 
         return response()->json($week);
@@ -193,15 +192,16 @@ class WeekController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Request $request,Week $week)
+    public function destroy(Week $week) //destroy(Request $request,Week $week)
     {   
         Gate::authorize('delete', $week);
         
         $weekId = $week->id;
         $week->delete();
 
-        $cacheKey = 'user' . $request->user()->id . 'weeks';
-        Cache::forget('week_' . $weekId);
+        // $cacheKey = 'user' . $request->user()->id . 'weeks';
+        // Cache::forget('week_' . $week->id);
+        $cacheKey = 'week_' . $week->id;
         Cache::forget($cacheKey);
 
         return response()->json([
