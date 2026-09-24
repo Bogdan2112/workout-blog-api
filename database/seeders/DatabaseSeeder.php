@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
 
         Role::firstOrCreate(['name' => 'user']);
         Role::firstOrCreate(['name' => 'admin']);
+        Role::firstOrCreate(['name' => 'moderator']);
         
         Permission::firstOrCreate(['name' => 'delete posts']);
         Permission::firstOrCreate(['name' => 'edit posts']);
@@ -46,11 +47,17 @@ class DatabaseSeeder extends Seeder
         $user2?->assignRole('user');
 
         $adminRole = Role::where('name', 'admin')->first();
+        $moderatorRole = Role::where('name', 'moderator')->first();
 
-        $adminRole?->givePermissionTo([
+        $adminRole?->syncPermissions([
             'delete posts',
             'edit posts',
             'manage users'
+        ]);
+
+        $moderatorRole?->syncPermissions([
+            'delete posts',
+            'edit posts'
         ]);
 
     }
