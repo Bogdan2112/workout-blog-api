@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'workoutx' => [
+        'key' => env('WORKOUTX_API_KEY'),
+    ],
+
 ];

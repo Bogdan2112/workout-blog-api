@@ -60,6 +60,7 @@ class ExerciseController extends Controller
         // $exercise->name = $request->name;
         // $exercise->save();
         $exercise->update($request->validated());
+        
 
         return response()->json($exercise);
     }
@@ -75,5 +76,25 @@ class ExerciseController extends Controller
         return response()->json([
             'message' => 'Exercise deleted successfully'
         ]);
+    }
+
+    public function suggestions(Request $request)
+    {
+        $search = trim($request->query('q', ''));
+
+        $names = Exercise::query()
+            ->whereHas('workout.week', function ($query) use ($request) {
+                $query->where('user_id', $request->user()->id);
+            })
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where('name', 'like', '%' . $search . '%');
+            })
+            ->select('name')
+            ->distinct()
+            ->orderBy('name')
+            ->limit(10)
+            ->pluck('name');
+
+        return response()->json(['data' => $names]);
     }
 }

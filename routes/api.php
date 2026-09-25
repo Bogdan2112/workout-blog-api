@@ -46,12 +46,14 @@ Route::prefix('v1')
 //Exercises routes
     Route::get('/workouts/{workout}/exercises',[ExerciseController::class, 'index']);
     Route::post('/workouts/{workout}/exercises',[ExerciseController::class, 'store']);
+    // Suggestion
+    Route::get('/exercises/suggestions', [ExerciseController::class, 'suggestions']);
 
     Route::get('/exercises/{exercise}', [ExerciseController::class, 'show']);
     Route::put('/exercises/{exercise}', [ExerciseController::class, 'update']);
     Route::delete('/exercises/{exercise}', [ExerciseController::class, 'destroy']);
 
-    // Sets routes
+// Sets routes
     Route::get('/exercises/{exercise}/sets', [SetController::class, 'index']);
     Route::post('/exercises/{exercise}/sets', [SetController::class, 'store']);
 
@@ -61,7 +63,7 @@ Route::prefix('v1')
 
     Route::patch('/sets/{set}', [SetController::class, 'update']);
 
-    // Gate
+ // Gate
     Route::get('/test-gate', function () {
 
     Gate::authorize('test-gate');
