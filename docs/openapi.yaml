@@ -1,0 +1,107 @@
+openapi: "3.0.3"
+info:
+  title: Repwise API
+  version: "1.0.0"
+
+servers:
+  - url: http://127.0.0.1:8000/api/v1
+
+paths:
+  /exercises/suggestions:
+    get:
+      summary: Sugerează nume de exerciții salvate
+      description: Caută în exercițiile utilizatorului autentificat.
+      parameters:
+        - name: q
+          in: query
+          required: false
+          description: Textul după care se caută numele.
+          schema:
+            type: string
+          example: bench
+      responses:
+        "200":
+          description: Sugestiile au fost returnate
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    maxItems: 10
+                    items:
+                      type: string
+              example:
+                data:
+                  - Bench Press
+                  - Incline Bench Press
+
+  /catalog/exercises:
+    get:
+      summary: Caută exerciții în catalogul WorkoutX
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Numele exercițiului căutat.
+          schema:
+            type: string
+            minLength: 2
+            maxLength: 100
+          example: bench
+      responses:
+        "200":
+          description: Exercițiile găsite în WorkoutX
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  count:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          example: "0025"
+                        name:
+                          type: string
+                          example: Barbell Bench Press
+                        bodyPart:
+                          type: string
+                        equipment:
+                          type: string
+                        target:
+                          type: string
+                        secondaryMuscles:
+                          type: array
+                          items:
+                            type: string
+                        instructions:
+                          type: array
+                          items:
+                            type: string
+                        gifUrl:
+                          type: string
+                          format: uri
+                        isUnilateral:
+                          type: boolean
+        "422":
+          description: Parametrul q lipsește sau nu este valid
+        "503":
+          description: WorkoutX a returnat un răspuns HTTP nereușit
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+security:
+  - bearerAuth: []

@@ -56,7 +56,7 @@ class ExerciseController extends Controller
         // $request->validate([
         //     'name' => 'required|string|max:255'
         // ]);
-        Get::authorize('update', $exercise);
+        Gate::authorize('update', $exercise);
         // $exercise->name = $request->name;
         // $exercise->save();
         $exercise->update($request->validated());
@@ -80,7 +80,11 @@ class ExerciseController extends Controller
 
     public function suggestions(Request $request)
     {
-        $search = trim($request->query('q', ''));
+        $data = $request->validate([
+            'q' => 'nullable|string|max:100',
+        ]);
+
+    $search = trim($data['q'] ?? '');
 
         $names = Exercise::query()
             ->whereHas('workout.week', function ($query) use ($request) {

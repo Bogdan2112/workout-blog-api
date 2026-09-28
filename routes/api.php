@@ -7,6 +7,7 @@ use App\Http\Controllers\WorkoutController;
 use App\Http\Controllers\ExerciseController;
 use App\Http\Controllers\SetController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\WokoutXCatalogController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -52,6 +53,9 @@ Route::prefix('v1')
     Route::get('/exercises/{exercise}', [ExerciseController::class, 'show']);
     Route::put('/exercises/{exercise}', [ExerciseController::class, 'update']);
     Route::delete('/exercises/{exercise}', [ExerciseController::class, 'destroy']);
+
+    // WorkoutX Catalog
+    Route::get('/catalog/exercises', [WokoutXCatalogController::class, 'index']);
 
 // Sets routes
     Route::get('/exercises/{exercise}/sets', [SetController::class, 'index']);
