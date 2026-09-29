@@ -9,7 +9,20 @@ class Exercise extends Model
 {
     use HasFactory;
     
-    protected $fillable = ['name'];
+    protected $fillable = [
+        'name',
+        'workoutx_id',
+        'target_muscle',
+        'instructions',
+        'mechanic',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'instructions' => 'array',
+        ];
+    }
 
     public function workout()
     {

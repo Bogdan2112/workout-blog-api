@@ -8,6 +8,7 @@ use App\Models\Workout;
 use App\Http\Requests\StoreWorkoutRequest;
 use App\Http\Requests\UpdateWorkoutRequest;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Cache;
 
 class WorkoutController extends Controller
 {
@@ -40,6 +41,8 @@ class WorkoutController extends Controller
             'name' => $request->name,
         ]);
 
+        Cache::forget('week_' . $week->id);
+
         return response()->json($workout, 201);
     }
 
@@ -70,6 +73,8 @@ class WorkoutController extends Controller
         // $workout->save();
 
         $workout->update($request->validated());
+
+        Cache::forget('week_' . $workout->week_id);
         return response()->json($workout);
     }
 
@@ -79,8 +84,13 @@ class WorkoutController extends Controller
     public function destroy(Workout $workout)
     {
         Gate::authorize('delete', $workout);
+        
+        $weekId = $workout->week_id;
 
         $workout->delete();
+
+        $week->delete();
+        Cache::forget('week_' . $weekId);
 
         return response()->json([
             'message' => 'Workout deleted succesfully'

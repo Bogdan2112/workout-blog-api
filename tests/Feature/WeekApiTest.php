@@ -136,11 +136,11 @@ class WeekApiTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->patchJson('/api/v1/weeks/' . $otherWeek->id, [
+        $response = $this->putJson('/api/v1/weeks/' . $otherWeek->id, [
             'name' => 'Changed name',
         ]);
 
-        $response->assertForForbidden();
+        $response->assertForbidden();
 
         $this->assertDatabaseHas('weeks',[
             'id' => $otherWeek->id,

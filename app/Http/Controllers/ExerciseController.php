@@ -8,6 +8,8 @@ use App\Models\Exercise;
 use App\Http\Requests\StoreExerciseRequest;
 use App\Http\Requests\UpdateExerciseRequest;
 use Illuminate\Support\Facades\Gate;
+use App\Services\WorkoutXExerciseService;
+use Illuminate\Http\Client\ConnectionException;
 
 class ExerciseController extends Controller
 {
@@ -78,27 +80,56 @@ class ExerciseController extends Controller
         ]);
     }
 
-    public function suggestions(Request $request)
-    {
-        $data = $request->validate([
-            'q' => 'nullable|string|max:100',
+    // public function suggestions(Request $request)
+    // {
+    //     $data = $request->validate([
+    //         'q' => 'nullable|string|max:100',
+    //     ]);
+
+    //     $search = trim($data['q'] ?? '');
+
+    //     // ->whereRelation('workout.week', 'user_id', $request->user()->id)
+    //     $names = Exercise::query()
+    //         ->whereHas('workout.week', function ($query) use ($request) {
+    //             $query->where('user_id', $request->user()->id);
+    //         })
+    //         ->when($search !== '', function ($query) use ($search) {
+    //             $query->where('name', 'like', '%' . $search . '%');
+    //         })
+    //         ->select('name')
+    //         ->distinct()
+    //         ->orderBy('name')
+    //         ->limit(10)
+    //         ->pluck('name');
+
+    //     return response()->json(['data' => $names]);
+    // }
+
+    public function storeFromWorkoutX(Request $request, Workout $workout, WorkoutxExerciseService $workoutx){
+        Gate::authorize('create', [Exercise::class, $workout]);
+        
+        $validated = $request->validate([
+            'workoutx_id' => 'required|string|min:2',
         ]);
 
-    $search = trim($data['q'] ?? '');
+        $response = $workoutx->find($validated['workoutx_id']);
 
-        $names = Exercise::query()
-            ->whereHas('workout.week', function ($query) use ($request) {
-                $query->where('user_id', $request->user()->id);
-            })
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where('name', 'like', '%' . $search . '%');
-            })
-            ->select('name')
-            ->distinct()
-            ->orderBy('name')
-            ->limit(10)
-            ->pluck('name');
+        if($response->failed()){
+            return response()->json([
+                'message' => 'Nu am putut încărca exercițiul din WorkoutX.',
+            ], 503);
+        }
+        
+        $data = $response->json();
 
-        return response()->json(['data' => $names]);
+        $exercise = $workout->exercises()->create([
+            'workoutx_id' => $validated['workoutx_id'],
+            'name' => $data['name'],
+            'target_muscle' => $data['target'] ?? null,
+            'instructions' => $data['instructions'] ?? [],
+            'mechanic' => $data['mechanic'] ?? null,
+        ]);
+
+         return response()->json($response->json($exercise, 201));
     }
 }

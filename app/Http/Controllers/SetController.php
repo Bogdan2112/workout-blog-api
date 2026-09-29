@@ -80,7 +80,7 @@ class SetController extends Controller
      */
     public function destroy(Set $set)
     {
-        Gate::authorize('deslete', $set);
+        Gate::authorize('delete', $set);
         $set->delete();
 
         return response()->json([

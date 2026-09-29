@@ -14,7 +14,7 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 // User routes
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:api');
 Route::post('/register', [AuthController::class, 'register']);
 
 // Week routes
@@ -56,6 +56,10 @@ Route::prefix('v1')
 
     // WorkoutX Catalog
     Route::get('/catalog/exercises', [WokoutXCatalogController::class, 'index']);
+
+    // Store from WorkoutX
+    Route::post('/workouts/{workout}/exercises/from-workoutx',
+     [ExerciseController::class, 'storeFromWorkoutX']);
 
 // Sets routes
     Route::get('/exercises/{exercise}/sets', [SetController::class, 'index']);
