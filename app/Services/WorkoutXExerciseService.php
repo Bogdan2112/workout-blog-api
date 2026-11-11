@@ -5,7 +5,7 @@ namespace App\Services;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 
-class WorkoutXExerciseService
+class WorkoutXExerciseService implements ExerciseCatalog
 {
     public function find(string $id): Response
     {
