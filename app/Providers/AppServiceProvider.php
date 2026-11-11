@@ -8,6 +8,8 @@ use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use App\Services\ExerciseCatalog;
+use App\Services\WorkoutXExerciseService;
 
 class AppServiceProvider extends ServiceProvider
 {
