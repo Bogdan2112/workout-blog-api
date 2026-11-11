@@ -1,4 +1,32 @@
-Creează designul și prototipul frontend pentru Repwise, o platformă de fitness care conectează membrii cu mai multe săli și le permite să gestioneze abonamente, rezervări și jurnalul personal de antrenament.
+# Fitline — brief pentru design și Lovable
+
+Fotografii: fiecare sală are o galerie de fotografii, cu o imagine principală în listă și acces la galerie în detalii. Fiecare plan de abonament are o singură imagine de prezentare, afișată în card și în detalii. Abonamentele cumpărate pot reutiliza imaginea planului. Nu sunt fotografii de profil ale utilizatorilor și nu se cer galerii pentru fiecare plan. Administrarea/upload-ul va urma drepturile proprietarului; pentru prima prezentare imaginile pot fi pregătite ca date demonstrative.
+
+Acces administrativ: când se implementează panoul proprietarului, toate rutele și subpaginile sale trebuie protejate prin autentificare și verificarea rolului, inclusiv la acces direct prin URL și refresh. Membrul obișnuit nu poate afișa paginile administrative doar cunoscând adresa. Ascunderea meniului nu este suficientă. Afișează o stare de verificare a sesiunii înainte de conținutul protejat și refuză/redirecționează accesul neautorizat. Datele și operațiile sunt protejate separat în API, inclusiv prin verificarea proprietății sălii. Acest lucru nu aduce panoul administrativ în livrarea inițială.
+
+Planul principal al aplicației, rolurile, funcționalitățile și schema propusă sunt în [FITLINE_PLAN.md](FITLINE_PLAN.md). În caz de diferențe cu promptul inițial de mai jos, deciziile confirmate din planul principal au prioritate. Secțiunile de prompt păstrează și viziunea ulterioară; nu toate sunt cerințe pentru prezentare.
+
+NOTĂ DE PRIORITATE PENTRU PREZENTARE (actualizată la 2026-11-11)
+
+Programul ședințelor: pagina afișează inițial ședințele din ziua curentă, calculată în fusul orar al sălii. Include un selector de zile (luni, marți, miercuri etc.) cu data calendaristică și ziua selectată evidențiate; poate fi dropdown sau taburi, forma finală rămâne flexibilă. Selectarea unei zile afișează ședințele acelei date, în ordine cronologică, pentru sala vizată. Dacă lista este goală, afișează un mesaj clar. Fiecare ședință are o descriere scurtă, vizibilă în detalii. Acest program este separat de antrenamentele din jurnalul personal.
+
+Descrieri: planul de abonament explică facilitățile incluse și condițiile de acces. Nu sunt necesare descrieri proprii pentru fiecare facilitate în prima versiune. Facilitățile rămân entități/drepturi de acces gestionate din date; textul descrierii planului nu înlocuiește regulile structurate din backend.
+
+Proprietari: un proprietar poate deține mai multe săli, fiecare cu propriile planuri și ședințe. Propunerea tehnică este un utilizator-proprietar legat de săli; un model separat GymOwner nu este încă stabilit. Drepturile administrative trebuie verificate față de sala vizată. Includerea CRUD-ului administrativ și a panoului proprietarului înainte de prezentare rămâne de prioritizat, nu este confirmată prin simpla adăugare a relației de proprietate.
+
+Vizite: include check-in și check-out pentru durata prezenței în sală, separat de checkout-ul de plată. Propunere: o vizită cu ora intrării și ora ieșirii; fără ieșire, durata finală este necunoscută. Regula confirmată pentru acces până la 17:00: membrul trebuie să încheie vizita până la 17:00. Întreaga ședință rezervată trebuie să încapă în intervalul permis. Check-out-ul ulterior limitei salvează ora reală; nu marca automat persoana ca ieșită la 17:00. Nu adăuga penalizări sau hardware fără cerințe noi.
+
+Cerință suplimentară confirmată pentru livrarea de prezentare: cumpărarea abonamentelor în aplicația de membru printr-o integrare funcțională în mediul de test al procesatorului, fără bani reali. Restricțiile orare ale planului se aplică atât vizitei în sală, cât și rezervării ședințelor. Exemplu: pentru un plan cu acces până la 17:00, intrarea este refuzată de la 17:00 inclusiv, iar vizita trebuie încheiată până la acea oră. Intervalele sunt configurabile per plan, nu fixe în cod. Ședința trebuie să se încadreze integral în intervalul permis. Nu presupune integrare cu hardware de control acces. Regulile efective se verifică în backend, nu doar prin dezactivarea unui buton în interfață. Procesatorul/banca nu sunt încă alese; trecerea în producție necesită configurarea și activarea cerute de furnizor, nu este garantată doar prin schimbarea credențialelor.
+
+Prima livrare pentru prezentare este experiența de membru cu mai multe săli. Nu include panoul administratorului de sală sau al unui administrator general. Secțiunile administrative din descrierea de mai jos reprezintă viziunea viitoare și nu sunt obligatorii pentru această livrare. În prototipul pentru prezentare nu este necesar comutatorul către rolul de administrator.
+
+Decizie confirmată pentru facilități: planurile pot include combinații diferite de acces la zona fitness, piscină, saună și clase de grup. Facilitățile nu sunt același lucru cu ședințele programate. Rezervările se implementează pentru ședințe cu dată, oră și capacitate; nu se cer calendare de rezervare separate pentru piscină sau saună în această livrare. Facilitățile și combinațiile planurilor sunt gestionate din date.
+
+Interfața pentru membri va fi conectată ulterior la API-ul Laravel pentru autentificare, program, abonamente și rezervări. Datele demonstrative din prototip nu reprezintă funcționalități backend deja implementate. Modul de pregătire a datelor inițiale și activarea abonamentelor pentru demonstrație se stabilesc separat; lipsa unui panou admin nu elimină regulile de acces și rezervare.
+
+DESCRIEREA PRODUSULUI ȘI VIZIUNEA PE TERMEN LUNG
+
+Creează designul și prototipul frontend pentru Fitline, o platformă de fitness care conectează membrii cu mai multe săli și le permite să gestioneze abonamente, rezervări și jurnalul personal de antrenament.
 
 Interfața trebuie să fie în limba română, modernă, coerentă și complet responsive. Vreau un produs credibil și utilizabil, cu pagini conectate și interacțiuni demonstrabile.
 
@@ -6,7 +34,7 @@ Aplicația are deja un backend Laravel în dezvoltare. Pentru acest prototip fol
 
 1. IDEEA PRODUSULUI
 
-Repwise are două componente complementare:
+Fitline are două componente complementare:
 
 A. Platformă pentru săli:
 - Descoperirea sălilor și a ședințelor programate.

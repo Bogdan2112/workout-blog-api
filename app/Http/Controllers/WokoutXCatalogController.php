@@ -3,7 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Services\WorkoutXExerciseService;
+// use App\Services\WorkoutXExerciseService;
+use App\Services\ExerciseCatalog;
 use Illuminate\Http\Client\ConnectionException;
 
 class WokoutXCatalogController extends Controller
@@ -25,7 +26,7 @@ class WokoutXCatalogController extends Controller
     //     return response()->json($response->json());
     // }
 
-     public function index(Request $request, WorkoutXExerciseService $workoutx)
+     public function index(Request $request, ExerciseCatalog $workoutx)
     {
         $data = $request->validate([
             'q' => 'required|string|min:2|max:100',

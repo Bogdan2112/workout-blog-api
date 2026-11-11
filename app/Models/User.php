@@ -15,6 +15,7 @@ use Spatie\Permission\Traits\HasRoles;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
@@ -40,5 +41,10 @@ class User extends Authenticatable
     public function weeks()
     {
         return $this->hasMany(Week::class);
+    }
+
+    public function ownedGyms(): HasMany
+    {
+        return $this->hasMany(Gym::class, 'owner_id');
     }
 }

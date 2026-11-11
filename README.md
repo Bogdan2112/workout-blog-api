@@ -1,4 +1,4 @@
-# Repwise — backend API
+# Fitline — backend API
 
 Proiectele sunt separate:
 
