@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Workout;
-use App\Models\Exercise;
 use App\Http\Requests\StoreExerciseRequest;
 use App\Http\Requests\UpdateExerciseRequest;
-use Illuminate\Support\Facades\Gate;
+use App\Models\Exercise;
+use App\Models\Workout;
 use App\Services\WorkoutXExerciseService;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class ExerciseController extends Controller
 {
@@ -22,7 +23,7 @@ class ExerciseController extends Controller
         $exercises = $workout->exercises;
 
         return response()->json($exercises);
-    }   
+    }
 
     /**
      * Store a newly created resource in storage.
@@ -35,7 +36,7 @@ class ExerciseController extends Controller
 
         Gate::authorize('create', [Exercise::class, $workout]);
         $exercise = $workout->exercises()->create([
-            'name' => $request->name
+            'name' => $request->name,
         ]);
 
         return response()->json($exercise, 201);
@@ -46,7 +47,8 @@ class ExerciseController extends Controller
      */
     public function show(Exercise $exercise)
     {
-        Gate::authorize('view', $exercise); 
+        Gate::authorize('view', $exercise);
+
         return response()->json($exercise);
     }
 
@@ -62,7 +64,6 @@ class ExerciseController extends Controller
         // $exercise->name = $request->name;
         // $exercise->save();
         $exercise->update($request->validated());
-        
 
         return response()->json($exercise);
     }
@@ -71,12 +72,12 @@ class ExerciseController extends Controller
      * Remove the specified resource from storage.
      */
     public function destroy(Exercise $exercise)
-    {   
+    {
         Gate::authorize('delete', $exercise);
         $exercise->delete();
 
         return response()->json([
-            'message' => 'Exercise deleted successfully'
+            'message' => 'Exercise deleted successfully',
         ]);
     }
 
@@ -105,21 +106,28 @@ class ExerciseController extends Controller
     //     return response()->json(['data' => $names]);
     // }
 
-    public function storeFromWorkoutX(Request $request, Workout $workout, WorkoutxExerciseService $workoutx){
+    public function storeFromWorkoutX(Request $request, Workout $workout, WorkoutXExerciseService $workoutx): JsonResponse
+    {
         Gate::authorize('create', [Exercise::class, $workout]);
-        
+
         $validated = $request->validate([
             'workoutx_id' => 'required|string|min:2',
         ]);
 
-        $response = $workoutx->find($validated['workoutx_id']);
+        try {
+            $response = $workoutx->find($validated['workoutx_id']);
+        } catch (ConnectionException $e) {
+            return response()->json([
+                'message' => 'Serviciul WorkoutX nu este disponibil momentan.',
+            ], 503);
+        }
 
-        if($response->failed()){
+        if ($response->failed()) {
             return response()->json([
                 'message' => 'Nu am putut încărca exercițiul din WorkoutX.',
             ], 503);
         }
-        
+
         $data = $response->json();
 
         $exercise = $workout->exercises()->create([
@@ -130,6 +138,6 @@ class ExerciseController extends Controller
             'mechanic' => $data['mechanic'] ?? null,
         ]);
 
-         return response()->json($response->json($exercise, 201));
+        return response()->json($exercise, 201);
     }
 }

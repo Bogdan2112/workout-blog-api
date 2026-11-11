@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Week;
-use Illuminate\Support\Facades\DB;
 use App\Http\Requests\StoreWeekRequest;
 use App\Http\Requests\UpdateWeekRequest;
 use App\Http\Resources\WeekResource;
+use App\Models\Week;
 use Exception;
-use Throwable;
-use Illuminate\Support\Facades\Gate;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class WeekController extends Controller
 {
@@ -20,7 +19,6 @@ class WeekController extends Controller
      */
     public function index(Request $request)
     {
-        \DB::enableQueryLog();
 
         // $weeks = Week::all();
 
@@ -30,13 +28,13 @@ class WeekController extends Controller
 
         // ---- Eager loading ----
 
-        //$weeks = Week::with('workouts')->get();
+        // $weeks = Week::with('workouts')->get();
         // $weeks = Week::with('workouts.exercises')->paginate(10); //get()
         // return WeekResource::collection($weeks);
 
         // return response()->json([
         //     'weeks' => $weeks,
-        //     'queries' => \DB::getQueryLog(), 
+        //     'queries' => \DB::getQueryLog(),
         // ]);
         // ----------
 
@@ -50,7 +48,6 @@ class WeekController extends Controller
         // ]);
         // ----------
 
-
         // ---- load() ----
         // $weeks = Week::all();
 
@@ -61,7 +58,6 @@ class WeekController extends Controller
         //     'queries' => \DB::getQueryLog()
         // ]);
         // --------
-
 
         // ---- Filtering ----
         // $weeks = Week::query();
@@ -76,7 +72,7 @@ class WeekController extends Controller
         // $weeks = Week::query();
 
         // Caching
-        $weeks = $request->user()->weeks();
+        $weeks = $request->user()->weeks()->with('workouts');
         // $cacheKey = 'user' . $request->user()->id . 'weeks';
         // $weeks = Cache::remember(
         //     // 'user' . $request->user()->id. 'weeks',
@@ -89,7 +85,7 @@ class WeekController extends Controller
         // );
 
         // Filtering
-         if($request->name){
+        if ($request->name) {
             $weeks->where('name', $request->name);
         }
 
@@ -101,15 +97,15 @@ class WeekController extends Controller
         //     $weeks->orderBy($request->sort);
         // }
 
-        if($request->sort){
-            if(!in_array($request->sort, $allowedSorts)){
+        if ($request->sort) {
+            if (! in_array($request->sort, $allowedSorts)) {
                 return response()->json([
-                'message' => 'Invalid sort field'
-            ], 404);
+                    'message' => 'Invalid sort field',
+                ], 404);
             }
-            if($request->direction && !in_array($request->direction, $allowedDirections)){
+            if ($request->direction && ! in_array($request->direction, $allowedDirections)) {
                 return response()->json([
-                    'message' => 'Invalid direction field'
+                    'message' => 'Invalid direction field',
                 ], 404);
             }
             $weeks->orderBy(
@@ -117,7 +113,6 @@ class WeekController extends Controller
                 $request->direction ?? 'asc');
         }
 
-        
         return WeekResource::collection($weeks->paginate(10));
     }
 
@@ -127,10 +122,10 @@ class WeekController extends Controller
     public function store(StoreWeekRequest $request)
     {
         Gate::authorize('create', Week::class);
-        
+
         $week = Week::create([
             'name' => $request->name,
-            'user_id' => $request->user()->id
+            'user_id' => $request->user()->id,
         ]);
 
         return response()->json($week, 201);
@@ -140,10 +135,10 @@ class WeekController extends Controller
      * Display the specified resource.
      */
     public function show(Week $week) // string $id
-    {   
-        
+    {
+
         // $week = Week::find($id);
-        
+
         // if(!$week){
         //     return response()->json([
         //         'message' => 'Week not found'
@@ -153,15 +148,18 @@ class WeekController extends Controller
         // return response()->json($week);
         // throw new Exception('Test error');
         Gate::authorize('view', $week);
-        $cacheKey = 'week_' . $week->id;
+        // $cacheKey = 'week_' . $week->id;
 
-        $week = Cache::remember(
-            $cacheKey,
-            60,
-            function () use ($week) {
-                return $week->load('workouts');
-            }
-        );
+        // $week = Cache::remember(
+        //     $cacheKey,
+        //     60,
+        //     function () use ($week) {
+        //         return $week->load('workouts');
+        //     }
+        // );
+
+        $week->load('workouts');
+
         return new WeekResource($week);
     }
 
@@ -181,10 +179,10 @@ class WeekController extends Controller
 
         $week->update($request->validated());
 
-        // $cacheKey = 'user' . $request->user()->id . 'weeks';
-        // Cache::forget('week_' . $week->id);
-        $cacheKey = 'week_' . $week->id;
-        Cache::forget($cacheKey);
+        // // $cacheKey = 'user' . $request->user()->id . 'weeks';
+        // // Cache::forget('week_' . $week->id);
+        // $cacheKey = 'week_' . $week->id;
+        // Cache::forget($cacheKey);
 
         return response()->json($week);
     }
@@ -192,20 +190,20 @@ class WeekController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Week $week) //destroy(Request $request,Week $week)
-    {   
+    public function destroy(Week $week) // destroy(Request $request,Week $week)
+    {
         Gate::authorize('delete', $week);
-        
-        $weekId = $week->id;
+
+        // $weekId = $week->id;
         $week->delete();
 
         // $cacheKey = 'user' . $request->user()->id . 'weeks';
         // Cache::forget('week_' . $week->id);
-        $cacheKey = 'week_' . $week->id;
-        Cache::forget($cacheKey);
+        // $cacheKey = 'week_' . $week->id;
+        // Cache::forget($cacheKey);
 
         return response()->json([
-            'message' => 'Week deleted succesfully'
+            'message' => 'Week deleted succesfully',
         ]);
     }
 }

@@ -26,23 +26,22 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
+            fn (Request $request) =>
+                $request->is('api/*') || $request->expectsJson(),
         );
 
-        //---
-        $exceptions->render(function (NotFoundHttpException $e, Request $request) {
-        if ($request->is('api/*')) {
-            return response()->json([
-                'message' => 'Resource not found'
-            ], 404);
-        }
+        $exceptions->render(
+            function (
+                NotFoundHttpException $e,
+                Request $request
+            ): ?\Illuminate\Http\JsonResponse {
+                if ($request->is('api/*')) {
+                    return response()->json([
+                        'message' => 'Resource not found',
+                    ], 404);
+                }
 
-        $exceptions->render(function (Throwable $e, Request $request) {
-        if ($request->is('api/*')) {
-            return response()->json([
-                'message' => 'Server error'
-            ], 500);
-        }
-        });
-    });
+                return null;
+            }
+        );
     })->create();

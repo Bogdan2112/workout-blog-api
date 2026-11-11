@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Week;    
-use App\Models\Workout;
 use App\Http\Requests\StoreWorkoutRequest;
 use App\Http\Requests\UpdateWorkoutRequest;
-use Illuminate\Support\Facades\Gate;
+use App\Models\Week;
+use App\Models\Workout;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Gate;
 
 class WorkoutController extends Controller
 {
@@ -41,7 +41,7 @@ class WorkoutController extends Controller
             'name' => $request->name,
         ]);
 
-        Cache::forget('week_' . $week->id);
+        // Cache::forget('week_' . $week->id);
 
         return response()->json($workout, 201);
     }
@@ -51,10 +51,10 @@ class WorkoutController extends Controller
      */
     public function show(Workout $workout)
     {
-        
+
         Gate::authorize('view', $workout);
 
-        return response()->json($workout);
+        return response()->json($workout->load('exercises.sets'));
     }
 
     /**
@@ -66,7 +66,6 @@ class WorkoutController extends Controller
         //     'name' => 'required|string|max:255'
         // ]);
 
-        
         Gate::authorize('update', $workout);
 
         // $workout->name = $request->name;
@@ -74,7 +73,7 @@ class WorkoutController extends Controller
 
         $workout->update($request->validated());
 
-        Cache::forget('week_' . $workout->week_id);
+        // Cache::forget('week_' . $workout->week_id);
         return response()->json($workout);
     }
 
@@ -84,16 +83,14 @@ class WorkoutController extends Controller
     public function destroy(Workout $workout)
     {
         Gate::authorize('delete', $workout);
-        
-        $weekId = $workout->week_id;
+
+        // $weekId = $workout->week_id;
 
         $workout->delete();
-
-        $week->delete();
-        Cache::forget('week_' . $weekId);
+        // Cache::forget('week_' . $weekId);
 
         return response()->json([
-            'message' => 'Workout deleted succesfully'
+            'message' => 'Workout deleted succesfully',
         ]);
     }
 }
