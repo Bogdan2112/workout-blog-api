@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Gym;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -18,7 +19,15 @@ class GymFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'owner_id' => User::factory(),
+            'name' => fake()->company().' Fitness',
+            'description' => fake()->paragraph(),
+            'city' => 'Chișinău',
+            'address' => fake()->streetAddress(),
+            'timezone' => 'Europe/Chisinau',
+            'contact_email' => fake()->safeEmail(),
+            'phone' => null,
+            'is_active' => true,
         ];
     }
 }

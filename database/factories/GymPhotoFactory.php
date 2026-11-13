@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Gym;
 use App\Models\GymPhoto;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -18,7 +19,9 @@ class GymPhotoFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'gym_id' => Gym::factory(),
+            'path' => 'gyms/demo/fitness.jpg',
+            'sort_order' => 0,
         ];
     }
 }

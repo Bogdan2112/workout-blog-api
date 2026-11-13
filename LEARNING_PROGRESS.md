@@ -1,13 +1,13 @@
 # Fitline — progres de învățare
 
-Actualizat: 2026-11-11.
+Actualizat: 2026-11-12.
 
 Planul principal al produsului și schema de date propusă: [FITLINE_PLAN.md](FITLINE_PLAN.md). Acest fișier păstrează progresul de învățare și istoricul verificărilor; intrările vechi despre pași propuși nu înlocuiesc starea curentă din plan.
 
 ## Mod de lucru confirmat
 
 - Lucrăm în română, după cursul intermediar, etapele 10–20.
-- Utilizatorul scrie codul. Asistentul inspectează, explică și oferă un singur pas practic, apoi așteaptă rezultatul.
+- În lecțiile cursului utilizatorul scrie codul; asistentul explică și oferă un singur pas practic. Excepție autorizată explicit la 2026-11-12: asistentul finalizează autonom munca repetitivă pentru programul sălilor și abonamente, pentru a relua mai repede cursul.
 - Fără modificări ale aplicației, instalări de pachete, modificări de schemă, commit sau push fără cerere explicită. Acest fișier este excepția autorizată.
 - Codul local este sursa pentru starea implementării; documentele sunt context și material de curs.
 
@@ -77,12 +77,20 @@ Planul principal al produsului și schema de date propusă: [FITLINE_PLAN.md](FI
 
 ### Reluare la următoarea sesiune
 
-- Utilizatorul dorește să facă push și să revină mâine. Progresul este salvat; asistentul nu a făcut commit/push.
-- Git la verificare: main urmărește origin/main și are deja un commit local nepublicat; există modificări suplimentare necomise și fișiere noi. `.env` este ignorat de Git.
-- Gym: migration executat (batch 5), câmpuri/owner_id, relațiile owner/ownedGyms și fillable/cast is_active implementate. Factory/seeder încă necompletate la ultima citire.
-- GymPhoto: model, factory și migration generate; migration completat și verificat sintactic. Ultimul migrate:status arată gym_photos Pending; nu există confirmare că utilizatorul a rulat migrate după indicație. Modelul GymPhoto este încă schelet la ultima citire.
-- Primul lucru la reluare: citește FITLINE_PLAN.md și această secțiune, inspectează GymPhoto/Gym și rulează read-only migrate:status. Dacă gym_photos este încă Pending, utilizatorul execută migrarea; dacă este Ran, continuăm cu relațiile photos/gym, fillable/casts după necesitate, apoi factory/seeder.
-- Arhitectură confirmată: Service Layer cu servicii dedicate, Form Requests, Policies și API Resources; fără Actions/Queries automate pentru fiecare endpoint. Nu începem refactorizare generală sau panou admin înaintea fluxului membrului.
+- Oprire la 2026-11-12: utilizatorul revine mâine. După implementarea autonomă a spus că au apărut prea multe concepte noi și preferă să le parcurgem manual, pas cu pas. Autorizarea anterioară nu înseamnă continuarea autonomă cu funcționalități noi; revenim la explicație/concept/motiv, un singur pas și așteptarea rezultatului.
+- Ultimul concept clarificat și confirmat prin reformularea utilizatorului: `$membership->user()->associate($user)` completează cheia externă `memberships.user_id = $user->id`; asocierea planului completează membership_plan_id. `new Membership([...])` construiește obiectul cu valorile copiate din plan, iar save() inserează rândul. Nu considerăm celelalte concepte noi stăpânite doar fiindcă au fost explicate.
+- La reluare recitim metoda createDemoMembership din MembershipService și urmărim pe un exemplu concret traseul seeder → plan/utilizator → obiect Membership → associate → save. Apoi aprofundăm pe rând CarbonImmutable/UTC, tranzacții, interogări cu Builder/whereHas și autorizare, după ce utilizatorul confirmă înțelegerea. Scoped/contextual binding rămân restante în 10.2; nu sărim direct peste explicațiile codului nou și nu adăugăm cod fără cerere.
+- La 2026-11-12 utilizatorul a autorizat explicit asistentul să termine autonom programul sălilor și abonamentele. Nu relua automat generarea pas cu pas a codului repetitiv deja implementat. Nu s-au făcut commit/push și modificările locale anterioare sunt păstrate.
+- GymPhoto: migration executat; relații photos/gym, fillable/cast, factory și imagini JPEG demonstrative funcționale. `public/storage` este legat și accesul HTTP la fotografii a fost confirmat de utilizator.
+- Catalog: GymService, GymResource, GymController și ruta gyms.index funcționale; utilizatorul a verificat 200 cu date/links/meta. Sanctum rămâne obligatoriu prin decizie explicită. Cele trei teste GymApiTest au fost scrise de utilizator și au trecut.
+- Program: GymOpeningHour, relații, fillable/cast și validare a celor șapte zile. O zi închisă are ambele ore null; fără pauze sau trecere peste miezul nopții. Migration-ul a fost executat de utilizator; datele demonstrative au fost completate ulterior de asistent.
+- MembershipPlan și Membership implementate cu migrations/factories/seeders, servicii, Policies, Form Request pentru paginare și API Resources. Detaliile sălii includ descriere, fotografii ordonate și program. Consultarea planurilor este limitată la sala cerută și ofertele active; abonamentele sunt limitate la utilizatorul curent (404 pentru alt utilizator).
+- Reguli confirmate: Part Time luni–vineri până la 17:00; Full Time toate zilele în programul sălii; Weekend sâmbătă/duminică în program. Durate 30/90/180/360 zile. Descrieri incluse. Prețurile/moneda MDL din seeders sunt demonstrative, în bani; imaginea planului reutilizează fotografia fitness existentă.
+- MembershipAccessService verifică proprietatea, starea, valabilitatea, zilele și orele în fusul sălii; poate verifica un interval complet. Limita de intrare este exclusivă la închidere/17:00/expirare. Abonamentul păstrează condițiile de la activare, independent de modificarea ofertei. Nu există încă rute pentru check-in/rezervări sau integrare în acele module.
+- Migrațiile membership_plans și memberships au fost aplicate în MySQL; FitlineDemoSeeder a rulat fără ștergeri și poate fi reluat fără duplicări. Cont membru demo: member@fitline.example / password, cu abonament is_demo. Crearea demo este limitată la local/testing. Nu există endpoint de cumpărare/activare și nu există plăți; etapa 16 rămâne pentru integrarea plăților.
+- Arhitectură: Service Layer, Form Requests, Policies, API Resources. Fără Actions/Queries/Onion automate. Facilitățile și selecția separată de antrenamente pentru planuri sunt amânate conform discuției recente.
+- Curs: 10.1 verificat; din 10.2 sunt demonstrate auto-resolution, singleton, interfață/implements/binding/injectare. Explicația scoped a fost începută, dar utilizatorul a cerut întâi abonamentele; exercițiul scoped NU a fost confirmat executat. Urmează reluarea pedagogică a scoped și contextual binding, apoi 10.3. Implementarea autonomă nu înseamnă că etapele 11–16 au fost învățate sau încheiate.
+- Verificare finală: întreaga suită `php artisan test --compact` a trecut: 77 teste, 213 aserțiuni. Pint `--dirty --format agent` executat cu succes; `git diff --check` fără erori. MySQL verificat read-only: 2 săli, 14 zile de program, 24 planuri, 1 abonament demo. Schema și seeders testate și cu SQLite în memorie. Problemele vechi din jurnal sunt istoric, nu eșecuri ale rulării curente.
 
 ### Istoric și verificări anterioare
 

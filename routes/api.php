@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ExerciseController;
+use App\Http\Controllers\GymController;
+use App\Http\Controllers\MembershipController;
+use App\Http\Controllers\MembershipPlanController;
 use App\Http\Controllers\SetController;
 use App\Http\Controllers\WeekController;
 use App\Http\Controllers\WokoutXCatalogController;
@@ -72,6 +75,20 @@ Route::prefix('v1')
         Route::delete('/sets/{set}', [SetController::class, 'destroy']);
 
         Route::patch('/sets/{set}', [SetController::class, 'update']);
+
+        // GYM
+        Route::get('/gyms', [GymController::class, 'index'])
+            ->name('gyms.index');
+
+        Route::get('/gyms/{gym}', [GymController::class, 'show'])
+            ->whereNumber('gym')->name('gyms.show');
+        Route::get('/gyms/{gym}/membership-plans', [MembershipPlanController::class, 'index'])
+            ->whereNumber('gym')->name('membership-plans.index');
+        Route::get('/gyms/{gym}/membership-plans/{membershipPlan}', [MembershipPlanController::class, 'show'])
+            ->whereNumber(['gym', 'membershipPlan'])->scopeBindings()->name('membership-plans.show');
+        Route::get('/memberships', [MembershipController::class, 'index'])->name('memberships.index');
+        Route::get('/memberships/{membership}', [MembershipController::class, 'show'])
+            ->whereNumber('membership')->name('memberships.show');
 
         // Gate
         Route::get('/test-gate', function () {

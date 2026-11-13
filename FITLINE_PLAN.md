@@ -1,12 +1,27 @@
 # Fitline — planul aplicației
 
-Actualizat: 2026-11-11.
+Actualizat: 2026-11-12.
 
 Document principal pentru cerințele produsului, structura funcțională și schema propusă a bazei de date. Îl actualizăm când se schimbă deciziile. `LEARNING_PROGRESS.md` urmărește învățarea și verificările; `rewpise.md` păstrează brief-ul pentru design/Lovable.
 
 Numele produsului a fost schimbat din Repwise în Fitline. Numele folderelor și al bazei de date nu se schimbă automat odată cu marca. Fișierul de brief `rewpise.md` își păstrează numele cerut inițial, dar conținutul descrie Fitline.
 
 **Statut:** cerințele de mai jos descriu ce construim. Tabelele, câmpurile, numele de modele și soluțiile marcate ca propuneri nu sunt migrations aprobate sau funcționalități deja implementate. În caz de contradicție cu un brief sau cu istoricul discuțiilor, deciziile confirmate din acest document au prioritate; starea implementării se verifică în cod.
+
+## Decizii confirmate și implementare — 2026-11-12
+
+- Catalogul necesită autentificare Sanctum, inclusiv sălile, programul și planurile. Accesul public a fost discutat și respins pentru prima versiune.
+- Program săptămânal în `gym_opening_hours`: șapte zile ISO (1=luni, 7=duminică), o singură pereche deschidere/închidere per zi, în fusul sălii. Ambele ore null înseamnă închis. Fără pauze, intervale nocturne sau excepții de sărbători în această versiune.
+- Planuri Part Time (luni–vineri, până la 17:00), Full Time (toate zilele în programul sălii) și Weekend (sâmbătă/duminică în programul sălii). Configurația reală este în `allowed_days` și `access_ends_at`, nu dedusă din nume. Închiderea sălii și expirarea pot scurta intervalul permis.
+- Durate confirmate: 1/3/6/12 luni comerciale = 30/90/180/360 de zile fixe, de la activare; nu luni calendaristice. Momentele concrete se păstrează în UTC.
+- Planurile au nume, descriere, imagine opțională, preț în unități monetare minore și monedă. `60000 MDL` reprezintă 600,00 MDL; prețurile din seeders sunt exclusiv demonstrative.
+- `Membership` păstrează copia numelui, prețului, monedei, duratei și regulilor de acces de la activare. Dezactivarea ofertei nu anulează abonamentele deja acordate; dezactivarea sălii refuză accesul.
+- Modelul, relațiile, validarea programului, API-ul de consultare și seeders sunt implementate. Datele personale sunt limitate la utilizatorul autentificat; un abonament al altui utilizator răspunde 404.
+- Plata de test rămâne pentru etapa 16. Nu există endpoint de cumpărare sau activare gratuită. Abonamentul demonstrativ se creează doar prin seeder, în mediile local/testing, cu `is_demo=true`.
+- Alegerea separată a antrenamentelor/facilităților incluse este amânată. Serviciul verifică acum perioada, zilele, orele și programul sălii; conectarea lui la rezervări/check-in urmează când implementăm acele module.
+- `FitlineDemoSeeder` poate fi reluat fără duplicări: completează doar sălile demonstrative ale proprietarului „Proprietar Fitline Demo”, păstrează programul deja existent și nu prelungește abonamentul la rerulare. Creează 12 planuri per sală și un abonament pentru `member@fitline.example` (parolă demonstrativă `password`).
+- Rute noi, toate sub `/api/v1` și Sanctum: `GET gyms/{gym}`, `GET gyms/{gym}/membership-plans`, `GET gyms/{gym}/membership-plans/{membershipPlan}`, `GET memberships`, `GET memberships/{membership}`. Paginarea listelor acceptă `page >= 1` și `per_page` între 1 și 100.
+- Fără panou administrativ, rute CRUD de scriere, procesator de plăți, rezervări sau vizite implementate în acest pas. Nu s-au instalat pachete.
 
 ## 1. Scopul produsului
 
@@ -262,7 +277,7 @@ Nu adăugăm un `gym_id` unic pe utilizator care să-l limiteze la o singură sa
 | `is_active` | Disponibilitatea în catalog, propunere pentru dezactivare |
 | timestamps | Creare și actualizare |
 
-Programul de funcționare este necesar pentru definirea accesului „full time”, dar reprezentarea lui pe zile și excepții trebuie decisă separat. Nu presupunem că sala funcționează 24/7. Fotografiile sunt o cerință confirmată; un logo distinct nu este încă cerut.
+Programul săptămânal este implementat în `gym_opening_hours`: gym_id, day_of_week (1–7), opens_at, closes_at, timestamps și pereche unică sală–zi. Un interval pe zi; ambele ore null înseamnă închis. Excepțiile de sărbători și programul nocturn sunt amânate. Full Time respectă acest program, nu înseamnă 24/7. Fotografiile sunt o cerință confirmată; un logo distinct nu este încă cerut.
 
 #### Fotografii pentru sală — `gym_photos`, tabelă suplimentară propusă
 
@@ -276,7 +291,7 @@ Propunerea minimă este o facilitate definită în contextul unei săli: `id`, `
 
 Nu cerem coloană de descriere în prima versiune. Dacă alegem ulterior un catalog global de tipuri de facilități, vom revizui această reprezentare înainte de migration, nu vom construi simultan ambele variante.
 
-### 9.4 `membership_plans` — propus
+### 9.4 `membership_plans` — implementat, 2026-11-12
 
 | Câmp | Scop |
 |---|---|
@@ -284,12 +299,13 @@ Nu cerem coloană de descriere în prima versiune. Dacă alegem ulterior un cata
 | `name`, `description` | Denumirea și oferta explicată membrului |
 | `image_path` | O singură imagine de prezentare a planului, cale către fișier |
 | `price_amount`, `currency` | Preț și monedă, fără calcule financiare cu float |
-| `duration_days` | Propunere pentru durata oferită; zile versus luni calendaristice rămâne de decis |
-| `access_starts_at`, `access_ends_at` | Propunere pentru un interval zilnic simplu |
+| `duration_days` | Durata confirmată: 30, 90, 180 sau 360 de zile |
+| `allowed_days` | Lista zilelor ISO permise, păstrată ca JSON |
+| `access_ends_at` | Limită orară opțională; null înseamnă până la închiderea sălii |
 | `is_active` | Dacă poate fi oferit spre cumpărare |
 | timestamps | Creare și actualizare |
 
-Semnificația valorilor goale pentru acces și relația cu programul sălii trebuie definite. Program diferit în fiecare zi, acces nocturn sau mai multe intervale sunt cazuri de discutat, nu sunt deja implementate. Nu adăugăm câmp pentru număr lunar de participări.
+Accesul începe la deschiderea sălii pentru ziua respectivă și se termină la cea mai apropiată limită: închidere, access_ends_at sau expirarea abonamentului. Nu adăugăm limită lunară de participări. Prețul este un întreg în unități monetare minore. Pentru istoricul abonamentelor, ștergerea unui plan referit este restricționată.
 
 ### 9.5 `facility_membership_plan` — pivot propus
 
@@ -310,25 +326,27 @@ Semnificația valorilor goale pentru acces și relația cu programul sălii treb
 
 Nu folosim tabela existentă `workouts` pentru aceste ședințe. Locurile disponibile se calculează din capacitate și rezervările active, nu sunt un număr modificat arbitrar în UI.
 
-### 9.7 `membership_plan_training_session` — pivot propus
+### 9.7 `membership_plan_training_session` — propunere istorică, amânată
 
 `membership_plan_id`, `training_session_id`, cu pereche unică. Reprezintă explicit ce planuri permit accesul la fiecare ședință, conform cerinței inițiale.
 
 Un plan și o ședință trebuie să fie din aceeași sală. Facilitățile incluse și accesul la o ședință sunt drepturi distincte; nu deducem automat accesul la toate clasele dintr-un text precum „Full Access”. Dacă alegem reguli pe categorii de ședințe în loc de legare explicită, decidem înainte de implementarea pivotului.
 
-### 9.8 `memberships` — propus
+### 9.8 `memberships` — implementat, 2026-11-12
 
 | Câmp | Scop |
 |---|---|
 | `id`, `user_id` | Abonamentul și titularul |
 | `membership_plan_id` | Oferta cumpărată |
 | `starts_at`, `ends_at` | Perioada efectivă a accesului |
-| `status` | Starea comercială/activarea, valori încă de stabilit |
+| `plan_name`, `price_amount`, `currency`, `duration_days`, `allowed_days`, `access_ends_at` | Copia condițiilor de la activare |
+| `cancelled_at` | Moment opțional de anulare; nu există endpoint de anulare în acest pas |
+| `is_demo` | Marcaj pentru datele demonstrative; implicit false în tabelă |
 | timestamps | Creare și actualizare |
 
 Sala se poate obține prin plan; un `gym_id` suplimentar se adaugă numai cu o justificare și validarea consistenței. Expirarea se verifică și din date, nu exclusiv dintr-un status actualizat periodic.
 
-Decizie necesară: dacă modificările unui plan afectează abonamentele deja cumpărate. Pentru a păstra condițiile cumpărate putem folosi o copie a drepturilor sau versiuni de plan, dar nu introducem încă o soluție fără explicație și alegere.
+Implementarea păstrează o copie a condițiilor planului. Starea este calculată la citire: scheduled înainte de început, active până la expirare exclusiv, expired de la expirare și cancelled de la cancelled_at. Nu există coloană status sau job care să actualizeze periodic expirarea. Nu există încă activare prin plată; crearea demo este izolată la local/testing.
 
 ### 9.9 `bookings` — propus
 
@@ -451,10 +469,10 @@ Etapa 10.1 a fost verificată practic. Din 10.2 au fost demonstrate auto-resolut
 
 - Data exactă a prezentării, disponibilitatea zilnică și dacă demonstrația trebuie să fie online.
 - Procesatorul/banca, țara contului comercial și moneda; cui îi revin încasările în versiunea reală cu mai mulți proprietari.
-- Când începe un abonament: imediat după plată sau la o dată aleasă; durata în zile sau luni calendaristice.
+- Activarea în fluxul real va fi legată de confirmarea plății la etapa 16; durata fixă în zile este confirmată.
 - Dacă pot exista simultan mai multe abonamente valabile ale aceluiași membru în aceeași sală și cum alegem unul pentru acces.
 - Condițiile deja cumpărate când proprietarul modifică oferta planului.
-- Programul sălii și al planului pe zile, weekenduri, sărbători și intervale peste miezul nopții, dacă le includem.
+- Programul săptămânal și restricțiile planurilor sunt confirmate mai sus; sărbătorile și intervalele nocturne nu sunt incluse.
 - Termenul de anulare, re-rezervarea și efectul anulării/modificării unei ședințe asupra rezervărilor.
 - Efectul anulării unui abonament sau al schimbării drepturilor asupra rezervărilor existente.
 - Politica vizitelor rămase deschise și cine le poate corecta ulterior; nu auto-completăm ieșiri fictive.
@@ -464,9 +482,9 @@ Etapa 10.1 a fost verificată practic. Din 10.2 au fost demonstrate auto-resolut
 
 Nu transformăm aceste întrebări în cerințe suplimentare implementate automat. Le rezolvăm când devin necesare, păstrând documentul actualizat.
 
-## 15. Ce este implementat efectiv la ultima verificare
+## 15. Istoricul implementării înainte de 2026-11-12
 
-Verificare fișiere: 2026-11-11. Nu a fost inspectată în această operație schema live MySQL.
+Verificare istorică: 2026-11-11. Pentru starea curentă și schema MySQL verificată, vezi secțiunea de decizii și implementare din 2026-11-12 și LEARNING_PROGRESS.md.
 
 - Există jurnalul API cu modelele User, Week, Workout, Exercise, Set, rute, validări și policies. Nu toate operațiile au fost confirmate funcționale; detaliile și erorile cunoscute sunt în `LEARNING_PROGRESS.md`.
 - Există autentificare Sanctum și pachetul Spatie pentru roluri/permisiuni.
