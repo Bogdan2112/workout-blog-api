@@ -1,6 +1,6 @@
 # Fitline — progres de învățare
 
-Actualizat: 2026-11-12.
+Actualizat: 2026-11-13.
 
 Planul principal al produsului și schema de date propusă: [FITLINE_PLAN.md](FITLINE_PLAN.md). Acest fișier păstrează progresul de învățare și istoricul verificărilor; intrările vechi despre pași propuși nu înlocuiesc starea curentă din plan.
 
@@ -77,9 +77,12 @@ Planul principal al produsului și schema de date propusă: [FITLINE_PLAN.md](FI
 
 ### Reluare la următoarea sesiune
 
+- Corectare autorizată explicit la 2026-11-13: utilizatorul a cerut separarea datelor demonstrative de serviciile aplicației. Eliminată createDemoMembership din MembershipService; acesta păstrează listForUser/findForUser. MembershipSeeder folosește acum MembershipFactory::forPlan pentru copia condițiilor și durata în UTC, plus for($member) pentru titular. Restricția local/testing rămâne în seeder, care selectează numai planuri și săli active. Nu există încă operație reală de acordare/cumpărare; nu o confundăm cu datele demonstrative.
+- Testele care apelau metoda demo folosesc acum factory; păstrat comportamentul de acces și adăugată verificarea că seeder-ul nu acordă abonamente pentru o sală inactivă. Rulare afectată: 40 teste trecute, 86 aserțiuni; Pint --dirty --format agent executat. Schema și datele MySQL nu au fost modificate în această corectare.
+- Demonstrația CarbonImmutable cu momentul actual a fost executată de utilizator: început 2026-11-13 10:16:59 UTC, sfârșit 2026-12-13 10:16:59 UTC, comparație === false. Exercițiul separat UTC/local nu are încă rezultat confirmat. Continuăm explicațiile pe codul reorganizat, câte un concept; scoped/contextual binding din 10.2 rămân restante.
 - Oprire la 2026-11-12: utilizatorul revine mâine. După implementarea autonomă a spus că au apărut prea multe concepte noi și preferă să le parcurgem manual, pas cu pas. Autorizarea anterioară nu înseamnă continuarea autonomă cu funcționalități noi; revenim la explicație/concept/motiv, un singur pas și așteptarea rezultatului.
 - Ultimul concept clarificat și confirmat prin reformularea utilizatorului: `$membership->user()->associate($user)` completează cheia externă `memberships.user_id = $user->id`; asocierea planului completează membership_plan_id. `new Membership([...])` construiește obiectul cu valorile copiate din plan, iar save() inserează rândul. Nu considerăm celelalte concepte noi stăpânite doar fiindcă au fost explicate.
-- La reluare recitim metoda createDemoMembership din MembershipService și urmărim pe un exemplu concret traseul seeder → plan/utilizator → obiect Membership → associate → save. Apoi aprofundăm pe rând CarbonImmutable/UTC, tranzacții, interogări cu Builder/whereHas și autorizare, după ce utilizatorul confirmă înțelegerea. Scoped/contextual binding rămân restante în 10.2; nu sărim direct peste explicațiile codului nou și nu adăugăm cod fără cerere.
+- Traseul de creare explicat anterior prin createDemoMembership este acum mutat în seeder/factory conform corectării din 2026-11-13. Pentru continuarea explicațiilor recitim MembershipSeeder și MembershipFactory::forPlan; apoi aprofundăm pe rând CarbonImmutable/UTC, tranzacții, interogări cu Builder/whereHas și autorizare, după confirmarea utilizatorului. Nu adăugăm cod fără cerere.
 - La 2026-11-12 utilizatorul a autorizat explicit asistentul să termine autonom programul sălilor și abonamentele. Nu relua automat generarea pas cu pas a codului repetitiv deja implementat. Nu s-au făcut commit/push și modificările locale anterioare sunt păstrate.
 - GymPhoto: migration executat; relații photos/gym, fillable/cast, factory și imagini JPEG demonstrative funcționale. `public/storage` este legat și accesul HTTP la fotografii a fost confirmat de utilizator.
 - Catalog: GymService, GymResource, GymController și ruta gyms.index funcționale; utilizatorul a verificat 200 cu date/links/meta. Sanctum rămâne obligatoriu prin decizie explicită. Cele trei teste GymApiTest au fost scrise de utilizator și au trecut.
