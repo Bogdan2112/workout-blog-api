@@ -6,6 +6,7 @@ use App\Models\Gym;
 use App\Models\Membership;
 use App\Models\MembershipPlan;
 use Database\Seeders\FitlineDemoSeeder;
+use Database\Seeders\MembershipSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -36,5 +37,16 @@ class FitlineDemoSeederTest extends TestCase
         $this->assertSame([30, 90, 180, 360], MembershipPlan::query()->distinct()->orderBy('duration_days')->pluck('duration_days')->all());
         $partTime = MembershipPlan::query()->where('name', 'Part Time — 1 lună')->firstOrFail();
         $this->assertSame('17:00', substr($partTime->access_ends_at, 0, 5));
+    }
+
+    public function test_demo_seeder_does_not_grant_memberships_for_an_inactive_gym(): void
+    {
+        $gym = Gym::factory()->create(['is_active' => false]);
+        $gym->owner->update(['name' => 'Proprietar Fitline Demo']);
+        MembershipPlan::factory()->for($gym)->create();
+
+        $this->seed(MembershipSeeder::class);
+
+        $this->assertDatabaseEmpty('memberships');
     }
 }

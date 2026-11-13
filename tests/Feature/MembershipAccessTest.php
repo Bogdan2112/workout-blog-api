@@ -7,7 +7,6 @@ use App\Models\Membership;
 use App\Models\MembershipPlan;
 use App\Models\User;
 use App\Services\MembershipAccessService;
-use App\Services\MembershipService;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -128,14 +127,15 @@ class MembershipAccessTest extends TestCase
     }
 
     #[DataProvider('durations')]
-    public function test_membership_duration_uses_fixed_days(int $days, string $expectedEnd): void
+    public function test_demo_membership_factory_uses_fixed_days(int $days, string $expectedEnd): void
     {
         $plan = MembershipPlan::factory()->create(['duration_days' => $days]);
         $user = User::factory()->create();
 
-        $membership = app(MembershipService::class)->createDemoMembership(
-            $user, $plan, CarbonImmutable::parse('2026-01-01 10:00:00', 'UTC'),
-        );
+        $membership = Membership::factory()
+            ->for($user)
+            ->forPlan($plan, CarbonImmutable::parse('2026-01-01 10:00:00', 'UTC'))
+            ->create();
 
         $this->assertSame($expectedEnd, $membership->ends_at->format('Y-m-d H:i:s'));
         $this->assertTrue($membership->is_demo);
@@ -170,8 +170,8 @@ class MembershipAccessTest extends TestCase
             ]);
         }
 
-        return app(MembershipService::class)->createDemoMembership(
-            User::factory()->create(), $plan, CarbonImmutable::parse('2026-11-01 00:00', 'UTC'),
-        );
+        return Membership::factory()
+            ->forPlan($plan, CarbonImmutable::parse('2026-11-01 00:00', 'UTC'))
+            ->create();
     }
 }

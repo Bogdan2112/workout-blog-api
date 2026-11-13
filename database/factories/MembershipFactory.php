@@ -35,4 +35,19 @@ class MembershipFactory extends Factory
             'is_demo' => true,
         ];
     }
+
+    public function forPlan(MembershipPlan $plan, CarbonImmutable $startsAt): static
+    {
+        return $this->for($plan, 'membershipPlan')->state(fn (array $attributes): array => [
+            'plan_name' => $plan->name,
+            'price_amount' => $plan->price_amount,
+            'currency' => $plan->currency,
+            'duration_days' => $plan->duration_days,
+            'allowed_days' => $plan->allowed_days,
+            'access_ends_at' => $plan->access_ends_at,
+            'starts_at' => $startsAt->utc(),
+            'ends_at' => $startsAt->utc()->addDays($plan->duration_days),
+            'is_demo' => true,
+        ]);
+    }
 }
