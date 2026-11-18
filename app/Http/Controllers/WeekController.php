@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
 
 class WeekController extends Controller
 {
@@ -119,9 +120,10 @@ class WeekController extends Controller
     /**
      * Store a newly created resource in storage.
      */
+    #[Authorize('create', Week::class)]
     public function store(StoreWeekRequest $request)
     {
-        Gate::authorize('create', Week::class);
+        // Gate::authorize('create', Week::class);
 
         $week = Week::create([
             'name' => $request->name,
@@ -134,6 +136,7 @@ class WeekController extends Controller
     /**
      * Display the specified resource.
      */
+    #[Authorize('view', 'week')]
     public function show(Week $week) // string $id
     {
 
@@ -147,7 +150,7 @@ class WeekController extends Controller
 
         // return response()->json($week);
         // throw new Exception('Test error');
-        Gate::authorize('view', $week);
+        // Gate::authorize('view', $week);
         // $cacheKey = 'week_' . $week->id;
 
         // $week = Cache::remember(
@@ -166,13 +169,14 @@ class WeekController extends Controller
     /**
      * Update the specified resource in storage.
      */
+    #[Authorize('update', 'week')]
     public function update(UpdateWeekRequest $request, Week $week)
     {
         // $request->validate([
         //     'name' => 'required|string|max:255'
         // ]);
 
-        Gate::authorize('update', $week);
+        // Gate::authorize('update', $week);
 
         // $week->name = $request->name;
         // $week->save();
@@ -190,9 +194,10 @@ class WeekController extends Controller
     /**
      * Remove the specified resource from storage.
      */
+    #[Authorize('delete', 'week')]
     public function destroy(Week $week) // destroy(Request $request,Week $week)
     {
-        Gate::authorize('delete', $week);
+        // Gate::authorize('delete', $week);
 
         // $weekId = $week->id;
         $week->delete();
