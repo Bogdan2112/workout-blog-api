@@ -1,0 +1,58 @@
+CONTEXT PENTRU CONTINUAREA ÎNVĂȚĂRII LARAVEL — 18.11.2026
+
+Poți trimite acest fișier într-un alt chat. Descrie starea verificată la data de mai sus. Codul disponibil la reluare trebuie verificat înainte de alte modificări.
+
+MODUL ÎN CARE LUCRĂM
+Învăț Laravel în română, pe proiectul Fitline (numit anterior Repwise), după Curs-Laravel-Intermediar.pdf, etapele 10–20. Eu scriu codul; asistentul explică ce facem și de ce, îmi dă un singur pas practic și așteaptă rezultatul. Am nevoie de exemple concrete și de explicații pentru conceptele noi. Nu implementa autonom funcționalități sau refactorizări. Nu instala pachete, modifica schema/datele, face commit ori push fără cerere explicită. Respectă AGENTS.md și regulile locale. Actualizarea progresului este autorizată.
+
+PROIECT ȘI MEDIU
+Backend: C:/workout-blog-api, PHP 8.4, Laravel 13.31.0 confirmat prin Composer la 18.11.2026. API cu Sanctum, Eloquent, Form Requests, Policies și API Resources. Arhitectura aleasă este Service Layer; nu introducem automat Actions/Queries, repository layers sau Onion. Versiunile pachetelor trebuie confirmate înainte de folosirea API-urilor lor.
+Documente principale: LEARNING_PROGRESS.md pentru progres și FITLINE_PLAN.md pentru planul produsului. Intrările vechi din progres sunt istorice; secțiunea de reluare din 18.11.2026 are prioritate.
+Curs local: C:/Users/admin/Downloads/Curs-Laravel-Intermediar.pdf, pagina 3 pentru etapa 10. Pe alt dispozitiv PDF-ul trebuie transferat separat dacă nu este disponibil.
+
+CE APLICAȚIE CONSTRUIM
+Aplicație pentru membri, cu mai multe săli. Păstrăm jurnalul personal User → Week → Workout → Exercise → Set. Sunt implementate catalogul sălilor, fotografii, program săptămânal, planuri de abonament, abonamente demonstrative și serviciul de verificare a accesului. Implementarea existentă nu înseamnă că am învățat deja toate conceptele folosite în ea.
+Pentru prezentare vrem cumpărare de abonamente printr-un procesator în mod test, rezervări/anulări ale ședințelor de grup și check-in/check-out. Aceste fluxuri nu sunt încă implementate. Ședințele programate sunt distincte de Workout din jurnal. Panourile administrative sunt amânate pentru după prezentare. Procesatorul de plăți nu este ales.
+Accesul se verifică pe server, în fusul sălii. Acces până la 17:00 înseamnă terminarea vizitei până atunci; intrarea de la 17:00 este refuzată. O ședință rezervată trebuie să se încadreze integral în accesul permis. Check-out-ul păstrează ora reală chiar dacă este târziu. Nu presupunem turnicheți/hardware.
+
+UNDE SUNT ÎN CURS
+10.1: ciclul requestului a fost parcurs.
+10.2: container, bind/singleton/scoped, interfețe, binding/injectare și contextual binding au fost explicate; unele exemple au fost doar conceptuale.
+10.3: Service Providers, register versus boot, providers deferred au fost explicate; nu am creat practic un provider propriu în această reluare.
+10.4: Facades, Contracts, real-time facades și comparația cu injectarea au fost discutate. ExerciseCatalog era deja injectat prin contract. Tranzacțiile DB au fost aprofundate, inclusiv programul sălii cu șapte updateOrCreate. La 18.11 am consolidat mocking-ul prin Cache::expects(...)->with(...)->andReturn(...), fără test nou.
+10.5: PHP Attributes este în curs, nu finalizat. NU sărim la etapa 11.
+
+CE AM ÎNȚELES DESPRE ATTRIBUTES
+- Sintaxa #[...] transmite informații citite de PHP sau Laravel; efectul depinde de attribute și de mecanismul care îl interpretează.
+- Deprecated marchează tranziția de la o metodă veche la una nouă; PHP 8.4 emite E_USER_DEPRECATED la apel. Nu trebuie păstrată o metodă inutilă dacă toate apelurile pot fi actualizate direct.
+- Storage('public') injectează discul ales într-un parametru Filesystem; nu salvează automat fișiere. Config('app.name') injectează o valoare de configurare. Sunt exemple explicate, fără clase create. Configurația ajută la valori variabile între medii; nu complicăm un string fix fără motiv.
+- Middleware atașează middleware pe controller/metodă. Exemplul auth:sanctum cere autentificare. Nu am mutat autentificarea existentă din rute.
+- Authorize este alternativa declarativă la Gate::authorize pentru verificarea potrivită. Exemplu: #[Authorize('update', 'week')]. 'week' este numele parametrului {week}; după model binding acesta conține obiectul Week. Middleware-ul atașat de attribute îl preia și apelează Gate, care găsește WeekPolicy și verifică update(User $user, Week $week). Attribute-ul nu transformă singur ID-ul în model. Policy-ul păstrează regula, iar verificarea middleware-ului precedă metoda controllerului.
+- Pentru create folosim #[Authorize('create', Week::class)], fiindcă obiectul încă nu există. Laravel poate determina policy-ul din clasa modelului.
+- UsePolicy asociază explicit modelul cu un policy, fără a declanșa verificări automat. La noi Week → WeekPolicy este descoperit prin convenție; nu avem nevoie de UsePolicy și nu l-am adăugat. Este separat de alegerea dintre Authorize și Gate.
+- Joburi: Tries(3) înseamnă maximum trei încercări totale, cu oprire la succes; Backoff(10) indică așteptarea înainte de retry după excepție; Timeout(60) limitează fiecare încercare; FailOnTimeout marchează jobul eșuat la timeout fără retry automat. Au fost exemple conceptuale; jobul CreateWorkoutReport încă doar scrie un log. Timeout-ul workerului necesită PCNTL; ținem cont că mediul este Windows.
+
+PRACTICA SCRISĂ DE MINE ÎN ACEASTĂ SESIUNE
+În app/Http/Controllers/WeekController.php am adăugat:
+use Illuminate\Routing\Attributes\Controllers\Authorize;
+
+store:   #[Authorize('create', Week::class)]
+show:    #[Authorize('view', 'week')]
+update:  #[Authorize('update', 'week')]
+destroy: #[Authorize('delete', 'week')]
+
+Apelurile Gate::authorize corespunzătoare sunt comentate. Importul Illuminate\Support\Facades\Gate încă există, deși nu mai este folosit activ. Nu s-au schimbat rutele, policies, autentificarea sau restul logicii. Asistentul a verificat inclusiv store la final, deci conversia lui este deja făcută.
+
+VERIFICARE ACTUALĂ
+php artisan test --compact tests/Feature/WeekApiTest.php
+Ultimul rezultat la 18.11.2026: 10 teste trecute, 21 aserțiuni, inclusiv modificarea propriei săptămâni și refuzul pentru săptămâna altui utilizator. SQLite în memorie; nu s-au modificat date MySQL. Întreaga suită nu a fost rerulată azi. Rezultatul istoric de 77 teste/213 aserțiuni din progres aparține sesiunii anterioare.
+Pint nu a fost rulat în sesiunea de azi; asistentul a verificat codul scris de mine, fără a edita PHP. Nu s-au făcut commit/push, instalări, migrations sau modificări ale datelor aplicației.
+
+DE UNDE CONTINUĂM
+1. Citește secțiunea curentă din LEARNING_PROGRESS.md și verifică WeekController disponibil. Nu mă pune să refac conversia deja terminată. Eventual elimin eu importul Gate nefolosit și curăț apelurile comentate, apoi verificăm formatarea/testele potrivite.
+2. Continuăm 10.5 cu partea de attributes pentru validare, încă neparcursă; verificăm documentația și suportul concret din versiunea instalată. Nu presupunem că toate regulile Form Request se mută în attributes. Alte exemple Eloquent pot fi explicate punctual.
+3. Practica etapei 10 din PDF este încă nefăcută: interfață PaymentGateway cu FakeGateway și StripeGateway, comutate din Service Provider fără modificarea controllerelor. Înainte de cod, stabilim exercițiul pas cu pas; nu implementăm automat o integrare Stripe reală sau instalăm pachete.
+4. Nu marca etapa 10 finalizată și nu porni etapa 11 înainte de încheierea celor de mai sus.
+
+MESAJ SCURT PENTRU ALT CHAT
+Continuăm în română învățarea Laravel pe Fitline. Eu scriu codul, tu explici și dai câte un singur pas practic. Suntem la 10.5 din curs, PHP Attributes. Am convertit deja store/show/update/destroy din WeekController la #[Authorize], cu policy-urile existente; cele 10 teste WeekApiTest trec, 21 aserțiuni. Am discutat Middleware, Authorize, UsePolicy și atributele pentru joburi. Urmează partea de validare din 10.5 și apoi practica PaymentGateway/FakeGateway/StripeGateway, încă neexecutată. Citește acest context și progresul curent, verifică fișierele disponibile și nu sări la etapa 11.
