@@ -54,7 +54,12 @@ class WorkoutController extends Controller
 
         Gate::authorize('view', $workout);
 
-        return response()->json($workout->load('exercises.sets'));
+        // return response()->json($workout->load('exercises.sets'));
+
+        $workout->load('exercises.sets');
+        $workout->append('volume');
+
+        return response()->json($workout);
     }
 
     /**

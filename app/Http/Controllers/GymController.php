@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\PaginationRequest;
+use App\Http\Requests\ListGymsRequest;
 use App\Http\Resources\GymDetailResource;
 use App\Http\Resources\GymResource;
 use App\Models\Gym;
@@ -16,10 +16,14 @@ class GymController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(PaginationRequest $request, GymService $gymService): AnonymousResourceCollection
+    public function index(ListGymsRequest $request, GymService $gymService): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', Gym::class);
-        $gyms = $gymService->listActiveGyms($request->pageSize(), $request->pageNumber());
+        $gyms = $gymService->listActiveGyms(
+            $request->pageSize(),
+            $request->pageNumber(),
+            $request->cityFilter(),
+        );
 
         return GymResource::collection($gyms);
     }

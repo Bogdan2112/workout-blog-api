@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Database\Factories\GymFactory;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -49,5 +51,17 @@ class Gym extends Model
     public function membershipPlans(): HasMany
     {
         return $this->hasMany(MembershipPlan::class);
+    }
+
+    #[Scope]
+    protected function active(Builder $query): void
+    {
+        $query->where('is_active', true);
+    }
+
+    #[Scope]
+    protected function inCity(Builder $query, string $city): void
+    {
+        $query->where('city', $city);
     }
 }

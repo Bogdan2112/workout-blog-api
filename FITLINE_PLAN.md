@@ -1,12 +1,23 @@
 # Fitline — planul aplicației
 
-Actualizat: 2026-11-12.
+Actualizat: 2026-11-23.
 
 Document principal pentru cerințele produsului, structura funcțională și schema propusă a bazei de date. Îl actualizăm când se schimbă deciziile. `LEARNING_PROGRESS.md` urmărește învățarea și verificările; `rewpise.md` păstrează brief-ul pentru design/Lovable.
 
 Numele produsului a fost schimbat din Repwise în Fitline. Numele folderelor și al bazei de date nu se schimbă automat odată cu marca. Fișierul de brief `rewpise.md` își păstrează numele cerut inițial, dar conținutul descrie Fitline.
 
 **Statut:** cerințele de mai jos descriu ce construim. Tabelele, câmpurile, numele de modele și soluțiile marcate ca propuneri nu sunt migrations aprobate sau funcționalități deja implementate. În caz de contradicție cu un brief sau cu istoricul discuțiilor, deciziile confirmate din acest document au prioritate; starea implementării se verifică în cod.
+
+## Priorități actualizate — 2026-11-23
+
+- Obiectivul cerut este aplicația completă pentru membri până la 20 decembrie 2026: cont/profil, catalog și căutare, abonamente/plată de test, program și rezervări/anulare, QR și vizite/check-in/check-out, jurnal/cronometrul antrenamentului, istoric și progres. Nu reducem cererea la un traseu de demo. Fezabilitatea și alegerea clientului mobil/procesatorului trebuie evaluate; data este țintă, nu o garanție.
+- CRM-ul nu este prioritatea acestei livrări. Pregătim relațiile și izolarea datelor pentru proprietari, administratori de sală, super administrator și antrenori. CRUD-ul, dashboardurile și interfețele lor așteaptă. Introducerea viitoare a antrenorului ca rol înlocuiește vechea limitare de viziune la simplu text pe ședință, fără să însemne că acel rol sau o schemă de personal sunt deja implementate.
+- Ordinea de învățare este legată de funcțiile produsului: primul exemplu este implementat manual de utilizator, apoi asistentul completează autonom repetițiile relevante, inclusiv teste. Nu rescriem toate modulele pentru a folosi un mecanism care nu le ajută. Regulile de business noi și alegerile importante se explică înainte de implementare; pachetele, migrarea datelor reale, commit/push nu sunt autorizate implicit.
+- Etapa 17 (AI) și aprofundarea 19 (DevOps) rămân amânate; 18 este după fluxurile funcționale. Optimizările de bază și prevenirea N+1 rămân parte din implementare. Păstrăm Service Layer, Form Requests, Policies, API Resources și PHPUnit; nu introducem automat Actions/DTO frameworks/Pest sau toate pachetele enumerate de curs.
+- Datele necesare fluxului membrului pot fi pregătite prin seeders până la CRM. Relațiile și verificările de apartenență se construiesc odată cu funcțiile care le folosesc; nu producem acum întregul cod administrativ.
+- Clarificare de învățare: PDF-ul rămâne traseul pentru conceptele selectate, inclusiv aprofundările avansate; nu le eliminăm doar fiindcă aplicația se poate construi fără ele. Când o funcție cere un concept dintr-o etapă ulterioară, îl parcurgem anticipat și îl notăm. Urmărim separat ce este explicat, exersat manual, implementat autonom și verificat; ordinea se adaptează dependențelor aplicației.
+- Catalog, implementare verificată 2026-11-23: GET /api/v1/gyms acceptă filtrul opțional city, validat separat în ListGymsRequest, cu paginare și excluderea sălilor inactive. Scopes locale Gym::active/inCity și MembershipPlan::active reutilizează filtrele. Filtrarea orașului este prin egalitate, nu motor de căutare full-text sau sugestii. Lipsa/golirea filtrului păstrează lista tuturor sălilor active; linkurile paginării păstrează filtrul și dimensiunea paginii.
+- Jurnal, implementare verificată 2026-11-23: fiecare serie expune volume = kg × reps; Exercise::volume și Workout::volume însumează seriile/exercițiile. Totalul antrenamentului este inclus explicit în endpointul de detalii, după încărcarea exercises.sets, fără appends global pe antrenamente sau coloană nouă. Nu există țintă de volum impusă, cronometru sau endpoint de analiză a progresului implementate prin această schimbare.
 
 ## Decizii confirmate și implementare — 2026-11-12
 
@@ -450,6 +461,24 @@ Separarea îmbunătățește întreținerea și testarea. Scalarea performanței
 
 ### Ordinea funcționalităților
 
+Actualizare de lucru 2026-11-23: lista de mai jos descrie dependențele funcționale, nu dovedește că fiecare pas este deja executat. Jurnalul, sălile, programul sălii și consultarea planurilor/abonamentelor există; clasele programate, rezervările, vizitele și plata nu există încă în codul inspectat.
+
+### Legătura practică cu etapele cursului
+
+| Funcționalitate | Concepte care se aplică pe parcurs |
+|---|---|
+| Jurnal, catalog și filtrare | 11.1 accessors/mutators/casts, 11.2 scopes, 11.3 agregări; 11.7 interogări/indexuri și N+1 |
+| Clase, eligibilitate și rezervări | Relații Eloquent, Service Layer din 12 adaptat arhitecturii alese; 11.6 tranzacții și controlul concurenței; enums/stări din 12.3–12.4 când sunt utile |
+| Plăți și activarea abonamentelor | 13.5 webhooks și idempotență, integrare procesator din 16; contracte/bindings din 10 când avem adaptoare reale |
+| Confirmări și operații în fundal | 13.1–13.3 events/listeners/notificări/mail și elementele necesare din 14 pentru cozi, retry și scheduling |
+| Profil, imagini și căutare | Părțile relevante din 16 pentru storage, validare, căutare și localizare; alegem instrumentele după nevoie, nu impunem Scout/Cashier/MediaLibrary fără evaluare |
+| Orice flux livrat | 15 — teste relevante, factories, fakes/mocking și Pint; păstrăm PHPUnit și infrastructura existentă |
+| Integrarea aplicației complete | 20 ca proiect practic adaptat Fitline; 18 după fluxuri; infrastructura minimă necesară demonstrației se decide separat |
+
+Aceasta este maparea de lucru la produs, nu declararea tuturor subpunctelor drept învățate sau promisiunea instalării pachetelor din PDF. Reverb, Socialite, Horizon, custom casts și celelalte extensii se aleg explicit dacă rezolvă o nevoie. Încheiem o parte din curs când a fost explicată/aplicată, nu doar fiindcă există cod generat.
+
+### Succesiunea funcțională
+
 1. Explicăm și definitivăm `Gym` și relația cu proprietarul; generăm model/migration/factory/seeder și verificăm.
 2. Facilități și listarea sălilor cu date demonstrative din MySQL.
 3. Planuri și drepturi de acces, cu programul permis clar definit.
@@ -467,7 +496,7 @@ Etapa 10.1 a fost verificată practic. Din 10.2 au fost demonstrate auto-resolut
 
 ## 14. Întrebări rămase înainte de implementarea părților respective
 
-- Data exactă a prezentării, disponibilitatea zilnică și dacă demonstrația trebuie să fie online.
+- Disponibilitatea zilnică și dacă demonstrația trebuie să fie online; data țintă cerută este 20 decembrie 2026.
 - Procesatorul/banca, țara contului comercial și moneda; cui îi revin încasările în versiunea reală cu mai mulți proprietari.
 - Activarea în fluxul real va fi legată de confirmarea plății la etapa 16; durata fixă în zile este confirmată.
 - Dacă pot exista simultan mai multe abonamente valabile ale aceluiași membru în aceeași sală și cum alegem unul pentru acces.
@@ -477,7 +506,7 @@ Etapa 10.1 a fost verificată practic. Din 10.2 au fost demonstrate auto-resolut
 - Efectul anulării unui abonament sau al schimbării drepturilor asupra rezervărilor existente.
 - Politica vizitelor rămase deschise și cine le poate corecta ulterior; nu auto-completăm ieșiri fictive.
 - Mecanismul de check-in/check-out din UI pentru demonstrație; nu presupunem dovada prezenței fizice prin simplul buton.
-- Confirmarea strategiei simple de proprietate `users → gyms.owner_id`; coproprietari și personal delegat nu sunt cerințe curente.
+- Relația proprietar–săli există prin `users → gyms.owner_id`. Pentru viitorul CRM trebuie definit separat personalul/adminii/antrenorii per sală și atribuirea antrenorilor la ședințe; nu presupunem coproprietate sau drepturi globale pentru un simplu rol.
 - Alegerea finală a pivotului explicit plan–ședință versus reguli pe categorii, înainte de implementarea accesului.
 
 Nu transformăm aceste întrebări în cerințe suplimentare implementate automat. Le rezolvăm când devin necesare, păstrând documentul actualizat.

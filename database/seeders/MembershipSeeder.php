@@ -18,9 +18,9 @@ class MembershipSeeder extends Seeder
 
         $plan = MembershipPlan::query()
             ->whereHas('gym.owner', fn (Builder $query): Builder => $query->where('name', 'Proprietar Fitline Demo'))
-            ->whereHas('gym', fn (Builder $query): Builder => $query->where('is_active', true))
+            ->whereHas('gym', fn (Builder $query): Builder => $query->active())
             ->where('name', 'Full Time — 1 lună')
-            ->where('is_active', true)
+            ->active()
             ->orderBy('id')->first();
 
         if ($plan === null) {

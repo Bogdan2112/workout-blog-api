@@ -20,7 +20,10 @@ class ExerciseController extends Controller
     public function index(Workout $workout)
     {
         Gate::authorize('view', $workout);
-        $exercises = $workout->exercises;
+        // $exercises = $workout->exercises;
+        $exercises = $workout->exercises()
+            ->with('sets')
+            ->get();
 
         return response()->json($exercises);
     }

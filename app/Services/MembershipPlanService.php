@@ -13,7 +13,7 @@ class MembershipPlanService
     {
         abort_unless($gym->is_active, 404);
 
-        return $gym->membershipPlans()->where('is_active', true)
+        return $gym->membershipPlans()->active()
             ->orderBy('duration_days')->orderBy('name')->orderBy('id')
             ->paginate($perPage, ['*'], 'page', $page);
     }
@@ -22,6 +22,6 @@ class MembershipPlanService
     {
         abort_unless($gym->is_active, 404);
 
-        return $gym->membershipPlans()->where('is_active', true)->findOrFail($planId);
+        return $gym->membershipPlans()->active()->findOrFail($planId);
     }
 }

@@ -80,13 +80,23 @@ class FrontendIntegrationTest extends TestCase
             ->assertCreated()->json('id');
         $exercise = $this->postJson("/api/v1/workouts/{$workout}/exercises", ['name' => 'Genuflexiuni'])
             ->assertCreated()->json('id');
-        $set = $this->postJson("/api/v1/exercises/{$exercise}/sets", ['kg' => 60, 'reps' => 8])
-            ->assertCreated()->json('id');
+        $set = $this->postJson(
+            "/api/v1/exercises/{$exercise}/sets",
+            ['kg' => 60, 'reps' => 8],
+        )
+            ->assertCreated()
+            ->assertJsonPath('volume', 480)
+            ->json('id');
 
         $this->putJson("/api/v1/weeks/{$week}", ['name' => 'Săptămâna actualizată'])->assertOk();
         $this->putJson("/api/v1/workouts/{$workout}", ['name' => 'Picioare A'])->assertOk();
         $this->putJson("/api/v1/exercises/{$exercise}", ['name' => 'Squat'])->assertOk();
-        $this->patchJson("/api/v1/sets/{$set}", ['kg' => 62.5, 'reps' => 10])->assertOk();
+        $this->patchJson(
+            "/api/v1/sets/{$set}",
+            ['kg' => 62.5, 'reps' => 10],
+        )
+            ->assertOk()
+            ->assertJsonPath('volume', 625);
 
         $this->getJson('/api/v1/weeks')->assertOk()->assertJsonPath('data.0.name', 'Săptămâna actualizată');
         $this->getJson("/api/v1/weeks/{$week}/workouts")->assertOk()->assertJsonPath('0.name', 'Picioare A');
@@ -122,12 +132,21 @@ class FrontendIntegrationTest extends TestCase
     public function test_workout_details_include_exercises_and_sets_in_one_response(): void
     {
         $week = Week::factory()->for(User::factory())->create();
-        $workout = Workout::factory()->for($week)->has(Exercise::factory()->hasSets(2))->create();
+        $workout = Workout::factory()
+            ->for($week)
+            ->has(
+                Exercise::factory()
+                    ->count(2)
+                    ->hasSets(2, ['kg' => 62.5, 'reps' => 3])
+            )
+            ->create();
         Sanctum::actingAs($week->user);
         $exercise = $workout->exercises->first();
 
         $this->getJson("/api/v1/workouts/{$workout->id}")
             ->assertOk()
+            ->assertJsonPath('volume', 750)
+            ->assertJsonPath('exercises.0.sets.0.volume', 187.5)
             ->assertJsonPath('id', $workout->id)
             ->assertJsonPath('exercises.0.id', $exercise->id)
             ->assertJsonCount(2, 'exercises.0.sets')

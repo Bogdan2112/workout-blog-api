@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Workout extends Model
 {
@@ -19,5 +20,12 @@ class Workout extends Model
     public function exercises()
     {
         return $this->hasMany(Exercise::class);
+    }
+
+    public function volume(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): float => $this->exercises->sum('volume'),
+        );
     }
 }
