@@ -8,10 +8,10 @@ use App\Http\Resources\WeekResource;
 use App\Models\Week;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Routing\Attributes\Controllers\Authorize;
 
 class WeekController extends Controller
 {
@@ -73,7 +73,8 @@ class WeekController extends Controller
         // $weeks = Week::query();
 
         // Caching
-        $weeks = $request->user()->weeks()->with('workouts');
+        $weeks = $request->user()->weeks()->with('workouts')
+            ->withCount('workouts');
         // $cacheKey = 'user' . $request->user()->id . 'weeks';
         // $weeks = Cache::remember(
         //     // 'user' . $request->user()->id. 'weeks',

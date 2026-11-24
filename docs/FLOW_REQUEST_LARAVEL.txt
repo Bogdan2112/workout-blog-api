@@ -1,0 +1,197 @@
+FITLINE — TRASEUL UNEI CERERI ÎN LARAVEL
+Exemplu: consultarea ședințelor unei săli
+Actualizat: 24 noiembrie 2026
+
+CEREREA TRIMISĂ DE FRONTEND
+
+GET /api/v1/gyms/1/training-sessions?date=2026-11-25
+Authorization: Bearer <token>
+Accept: application/json
+
+Frontendul cere ședințele sălii 1 pentru data de 25 noiembrie.
+
+SCHEMA PRINCIPALĂ
+
+FRONTEND: trimite cererea HTTP
+    |
+    v
+LARAVEL: pornește aplicația și trece prin middleware-urile globale
+    |
+    v
+RUTĂ: identifică TrainingSessionController::index
+    |
+    v
+AUTH:SANCTUM: identifică utilizatorul din token
+    |-- autentificare invalidă ----------------------> 401
+    v
+MODEL BINDING: transformă {gym}=1 într-un obiect Gym
+    |-- sala nu există -----------------------------> 404
+    v
+MIDDLEWARE DE AUTORIZARE, declarat prin:
+#[Authorize('view', 'gym')]
+    |
+    |-- citește obiectul Gym din parametrii rutei
+    |-- cere Gate-ului autorizarea pentru 'view'
+    |-- Gate obține utilizatorul autentificat
+    |-- Gate găsește GymPolicy pentru modelul Gym
+    |-- apelează GymPolicy::view($user, $gym)
+    |
+    |-- acces refuzat -------------------------------> răspuns de refuz
+    |   În GymPolicy actual: sala inactivă => 404.
+    v
+FORM REQUEST: ListTrainingSessionsRequest
+    |-- execută authorize() propriu, apoi regulile de validare
+    |-- verifică date, page și per_page
+    |-- input invalid ------------------------------> 422 + erori
+    v
+CONTROLLER: se execută metoda index()
+    |-- primește requestul validat și obiectul Gym
+    |-- primește serviciul prin Service Container
+    |-- apelează TrainingSessionService::listForDate(...)
+    v
+SERVICE: construiește interogarea pentru sala și ziua selectată
+    |-- interpretează ziua în fusul orar al sălii
+    |-- transformă limitele zilei în UTC
+    |-- filtrează, ordonează și paginează
+    v
+ELOQUENT <---------------------------------------> BAZA DE DATE
+    |
+    | primește rezultatele și le reprezintă ca modele
+    v
+SERVICE: întoarce rezultatul paginat către controller
+    v
+CONTROLLER: returnează TrainingSessionResource::collection(...)
+    v
+RESOURCE: Laravel apelează toArray() pentru fiecare ședință
+    |-- alege câmpurile și reprezentarea lor
+    v
+LARAVEL: serializează datele în JSON
+    |-- răspunsul se întoarce prin middleware-urile aplicabile
+    v
+FRONTEND: primește JSON-ul și afișează ședințele
+
+Aceasta este ordinea relevantă pentru endpointul nostru cu atribut de
+autorizare și Form Request. Nu este lista tuturor operațiilor interne Laravel.
+La orice refuz sau eroare, pașii următori ai operației nu se mai execută;
+răspunsul este pregătit și trimis înapoi.
+
+
+CINE CE FACE?
+
+1. routes/api.php
+   Asociază metoda HTTP și adresa cu metoda controllerului.
+   Aplică grupul Sanctum și configurează model binding-ul.
+   Identificarea rutei NU înseamnă executarea imediată a controllerului.
+
+2. auth:sanctum
+   Răspunde la: „Cine face cererea?”
+   În frontendul nostru identifică utilizatorul din Bearer token.
+   Autentificarea nu înseamnă automat dreptul de a efectua orice operație.
+
+3. Model binding
+   Răspunde la: „Despre ce sală este vorba?”
+   Înlocuiește identificatorul din {gym} cu un model Gym.
+   Același obiect este disponibil middleware-ului și controllerului.
+
+4. #[Authorize('view', 'gym')]
+   Declară middleware-ul can:view,gym.
+   'view' = abilitatea/metoda cerută din Policy.
+   'gym' = cheia parametrului rutei, NU variabila citită din controller.
+   Atributul este interpretat de Laravel la colectarea middleware-urilor.
+   Verificarea se execută ulterior în middleware, la procesarea cererii.
+
+5. Gate
+   Coordonează verificarea și găsește Policy-ul modelului.
+   Obține utilizatorul autentificat prin sistemul de autentificare Laravel.
+   Convenția folosită aici: App\Models\Gym => App\Policies\GymPolicy.
+
+6. GymPolicy
+   Definește regula concretă de autorizare.
+   Exemplu: view(User $user, Gym $gym).
+   O metodă din Policy nu rulează doar fiindcă există; trebuie apelată
+   prin mecanismul de autorizare.
+   La noi, consultarea este permisă utilizatorilor autentificați pentru
+   săli active; nu este necesar un abonament pentru consultare.
+
+7. ListTrainingSessionsRequest
+   Verifică forma și valorile inputurilor primite.
+   Moștenește autorizarea și paginarea din PaginationRequest.
+   authorize() verifică autentificarea; nu înlocuiește GymPolicy.
+   date este opțională, dar dacă este prezentă trebuie să fie o dată
+   validă în format Y-m-d. Lipsa datei înseamnă azi în fusul sălii.
+   Un Form Request este cererea HTTP specializată pentru endpoint;
+   nu este o cerere nouă trimisă separat de frontend.
+
+8. TrainingSessionController
+   Coordonează HTTP: primește argumentele, apelează serviciul și
+   returnează Resource-ul. Nu definește aici interogarea de listare.
+   Service Container îi furnizează automat TrainingSessionService.
+
+9. TrainingSessionService
+   Organizează operația și interogările necesare.
+   La rezervare va coordona și regulile de eligibilitate/concurență,
+   prin serviciile potrivite; acea operație nu este încă implementată.
+
+10. Model/Eloquent
+    Reprezintă datele, relațiile și conversiile prin casts().
+    Execută interogarea când este cerut rezultatul, aici prin paginate().
+    casts() nu validează inputurile și nu construiește răspunsul JSON.
+
+11. TrainingSessionResource
+    Definește reprezentarea datelor pentru frontend.
+    Primește modelul în constructorul moștenit de la JsonResource.
+    Laravel transmite separat cererea HTTP metodei toArray(Request $request).
+    toArray() produce un array PHP; Laravel îl serializează ulterior în JSON.
+    Resource-ul nu este locul pentru interogările și regulile operației.
+
+
+ATRIBUT VERSUS GATE ÎN METODA CONTROLLERULUI
+
+Varianta folosită acum:
+
+    #[Authorize('view', 'gym')]
+    public function index(ListTrainingSessionsRequest $request, Gym $gym, ...)
+
+    Autentificare + binding
+        -> middleware de autorizare -> Policy
+        -> autorizare/validare Form Request
+        -> corpul metodei controllerului
+
+Varianta cu apel în corpul metodei:
+
+    public function index(ListTrainingSessionsRequest $request, Gym $gym, ...)
+    {
+        Gate::authorize('view', $gym);
+        ...
+    }
+
+    Autentificare + binding
+        -> autorizare/validare Form Request
+        -> corpul metodei -> Gate::authorize() -> Policy
+
+Pentru aceeași regulă și același obiect folosim o singură variantă.
+Atributul ajunge tot la Gate; nu adăugăm un Gate duplicat în controller.
+Gate explicit este util, de exemplu, când obiectul de autorizat este
+determinat în interiorul operației. Nu modificăm date protejate înainte
+de autorizare. Ambele variante opresc automat operația la refuz.
+
+
+FIȘIERE DE URMĂRIT ÎN PROIECT
+
+routes/api.php
+app/Policies/GymPolicy.php
+app/Http/Requests/ListTrainingSessionsRequest.php
+app/Http/Requests/PaginationRequest.php
+app/Http/Controllers/TrainingSessionController.php
+app/Services/TrainingSessionService.php
+app/Models/Gym.php
+app/Models/TrainingSession.php
+app/Http/Resources/TrainingSessionResource.php
+
+DE REȚINUT
+
+Autentificare = cine ești.
+Autorizare    = ai voie să faci operația pentru acel obiect.
+Validare      = datele trimise respectă regulile inputului.
+Service       = execută operația și coordonează regulile/interogările.
+Resource      = definește datele pe care le primește frontendul.

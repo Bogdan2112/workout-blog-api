@@ -53,6 +53,11 @@ class Gym extends Model
         return $this->hasMany(MembershipPlan::class);
     }
 
+    public function trainingSessions(): HasMany
+    {
+        return $this->hasMany(TrainingSession::class);
+    }
+
     #[Scope]
     protected function active(Builder $query): void
     {

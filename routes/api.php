@@ -6,6 +6,7 @@ use App\Http\Controllers\GymController;
 use App\Http\Controllers\MembershipController;
 use App\Http\Controllers\MembershipPlanController;
 use App\Http\Controllers\SetController;
+use App\Http\Controllers\TrainingSessionController;
 use App\Http\Controllers\WeekController;
 use App\Http\Controllers\WokoutXCatalogController;
 use App\Http\Controllers\WorkoutController;
@@ -87,6 +88,10 @@ Route::prefix('v1')
         Route::get('/gyms/{gym}/membership-plans/{membershipPlan}', [MembershipPlanController::class, 'show'])
             ->whereNumber(['gym', 'membershipPlan'])->scopeBindings()->name('membership-plans.show');
         Route::get('/memberships', [MembershipController::class, 'index'])->name('memberships.index');
+        Route::get('/gyms/{gym}/training-sessions', [TrainingSessionController::class, 'index'])
+            ->whereNumber('gym')->name('training-sessions.index');
+        Route::get('/gyms/{gym}/training-sessions/{trainingSession}', [TrainingSessionController::class, 'show'])
+            ->whereNumber(['gym', 'trainingSession'])->scopeBindings()->name('training-sessions.show');
         Route::get('/memberships/{membership}', [MembershipController::class, 'show'])
             ->whereNumber('membership')->name('memberships.show');
 

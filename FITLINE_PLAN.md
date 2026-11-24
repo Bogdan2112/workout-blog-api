@@ -1,6 +1,6 @@
 # Fitline — planul aplicației
 
-Actualizat: 2026-11-23.
+Actualizat: 2026-11-24.
 
 Document principal pentru cerințele produsului, structura funcțională și schema propusă a bazei de date. Îl actualizăm când se schimbă deciziile. `LEARNING_PROGRESS.md` urmărește învățarea și verificările; `rewpise.md` păstrează brief-ul pentru design/Lovable.
 
@@ -8,7 +8,64 @@ Numele produsului a fost schimbat din Repwise în Fitline. Numele folderelor și
 
 **Statut:** cerințele de mai jos descriu ce construim. Tabelele, câmpurile, numele de modele și soluțiile marcate ca propuneri nu sunt migrations aprobate sau funcționalități deja implementate. În caz de contradicție cu un brief sau cu istoricul discuțiilor, deciziile confirmate din acest document au prioritate; starea implementării se verifică în cod.
 
-## Priorități actualizate — 2026-11-23
+## Livrarea aplicației înaintea parcurgerii cursului — 2026-11-24
+
+Această decizie înlocuiește ordinea pedagogică și cerințele vechi de client instalabil/procesator sandbox din istoricul documentului. Ținta este 20 decembrie 2026: aplicație web pentru membri, utilizabilă pe telefon, rulată local. Nu cerem APK, App Store, backend public sau integrare bancară pentru această livrare. Pe telefonul fizic se configurează adresa calculatorului din rețeaua locală pentru frontend/API, CORS și accesul serverului; localhost-ul telefonului nu este calculatorul.
+
+Plata va folosi un simulator Laravel, fără credențiale bancare, carduri reale sau bani reali. Integrarea maib/MIA poate fi adăugată ulterior dacă obținem acces. Simulatorul furnizează rezultate serviciului de cumpărare; activarea se verifică în backend și este idempotentă, nu un flag trimis de frontend. Rutele de simulare sunt limitate la local/testing. Nu numim acest simulator integrare maib sau webhook bancar verificat.
+
+**Mod de lucru:** alegem următorul flux al produsului, explicăm pe scurt regulile și conceptele noi care îl susțin, apoi îl implementăm complet: API, teste relevante și interfață. Asistentul poate construi modulul și repetițiile autorizate; primul exemplu manual nu mai blochează fiecare subpunct. Utilizatorul poate cere explicații sau practică pe bucata care îl interesează. Codul implementat și conceptele înțelese rămân evidențe separate. Nu parcurgem PDF-ul în ordine până la termen și nu implementăm funcții ca să bifăm exerciții. După livrare reluăm aprofundarea cursului.
+
+### Auditul aplicației și rezultatul urmărit
+
+- **Ordine reconfirmată ulterior în sesiunea 2026-11-24:** ședințe și rezervări → acces/QR/vizite → cumpărare simulată. Folosim abonamentele demonstrative pentru a construi mai întâi operațiile disponibile după cumpărare. Aceasta înlocuiește propunerea inițială de a începe cu plata din calendarul orientativ de mai jos.
+- **Implementare nouă 2026-11-24:** TrainingSession și relația Gym.trainingSessions, migration/factory/seeder separat, ListTrainingSessionsRequest, TrainingSessionService/Controller/Resource. GET /api/v1/gyms/{gym}/training-sessions filtrează după date=YYYY-MM-DD (implicit ziua curentă a sălii), ordonează și paginează; GET /api/v1/gyms/{gym}/training-sessions/{trainingSession} oferă detaliile, cu scoped binding. Consultarea cere Sanctum, fără abonament; sălile inactive și nepotrivirea sală–ședință răspund 404. Datele sunt UTC, filtrul folosește limitele zilei din fusul sălii. Ședințele anulate rămân vizibile cu cancelled_at; nu sunt deja rezervabile printr-un endpoint nou. Capacity este capacitatea totală, nu locuri disponibile. Fără UI, rezervări, trainer relation sau CRUD admin în acest pas. Migration/seeder nu au fost executate pe MySQL; 14 teste noi/46 aserțiuni, suita completă 97 teste/286 aserțiuni. Selecția anterioară despre module absente descrie începutul auditului.
+
+- **Simplificare confirmată 2026-11-24:** nu implementăm acum drepturi separate ale planurilor la anumite ședințe/facilități. Pentru rezervări, orice ședință a aceleiași săli este eligibilă dacă abonamentul permite întregul interval, iar ședința are locuri și îndeplinește regulile de rezervare. Nu adăugăm pivoturi plan–ședință/plan–facilitate sau reguli pe categorii pentru această livrare. Facilitățile pot rămâne informații de prezentare ale sălii; nu pretindem control separat de acces la ele. Această decizie înlocuiește cerințele mai vechi de drepturi diferențiate din document.
+
+- Backend verificat: autentificare Sanctum, jurnal Week → Workout → Exercise → Set, volume calculate, catalog WorkoutX, săli active/filtru city, galerii/program, planuri, consultarea abonamentelor și serviciul de eligibilitate pe interval. Nu există încă module de plăți/cumpărare, ședințe programate, rezervări sau vizite. Autentificarea existentă nu înseamnă profil/avatar/resetare parolă complet implementate.
+- Frontendul separat C:/repwise-frontend este React/Vite și deservește autentificarea și jurnalul. Noile funcții pentru săli/abonamente/rezervări nu sunt deja conectate în această interfață. Designurile nu dovedesc existența fluxurilor. Extindem interfața pe măsură ce construim modulele; nu amânăm integrarea până la final.
+- Verificare de bază 2026-11-24: php artisan test --compact — 83 teste trecute, 240 aserțiuni, SQLite :memory:. Aceasta confirmă suita existentă, nu modulele încă absente sau integrarea completă pe telefon. Auditul a modificat documentele, fără PHP, dependențe, schema sau datele MySQL.
+- Rezultatul: membrul își gestionează contul, caută o sală și consultă detaliile, cumpără prin simulare un plan al acelei săli, vede abonamentul, consultă ședințe datate, rezervă/anulează, folosește fluxul demonstrativ QR/check-in/check-out și vede vizite, antrenamente, cronometru și progres. Accesul și datele sunt controlate de backend. Fluxul QR local nu certifică prezența fizică și nu include turnicheți.
+- CRM-ul, gestiunea completă a personalului și CRUD-ul administrativ rămân ulterioare. Păstrăm proprietatea pe sală și definim relațiile necesare extensiei, fără să construim acum panouri. Datele de catalog/program se pot pregăti prin seeders.
+
+### Selecția subpunctelor din PDF până la termen
+
+„Acum” înseamnă aplicare acolo unde modulul o cere, nu că toate variantele enumerate sunt obligatorii sau deja învățate.
+
+| Subpuncte | Decizie și folosire în Fitline |
+|---|---|
+| 10.1–10.5 lifecycle, container, providers, facades/contracts, attributes | Folosim baza deja parcursă. Contract PaymentGateway și implementare simulată legată în provider; păstrăm autorizarea existentă. Contextual/scoped binding, deferred providers și toate atributele posibile pot aștepta. |
+| 11.1 casts/accessors; 11.2 scopes | Acum: date/boolean/array/enum unde trebuie, volume și filtre reutilizabile. Custom casts, AsCollection și global scopes nu sunt obligații. |
+| 11.3 agregări/subquery-uri | Acum: locuri rezervate/disponibile și statistici relevante, fără încărcarea inutilă a tuturor relațiilor. Subquery-uri avansate doar dacă query-ul real le justifică. withCount din WeekController rămâne exemplul început, nu un capitol care blochează produsul. |
+| 11.4 procesare volum mare; 11.5 observers | Amânate: nu avem cerință de import masiv. Regulile de cumpărare/rezervare rămân explicite în servicii, fără observers introduși doar ca exercițiu. |
+| 11.6 tranzacții și lockForUpdate; 11.7 indexuri/N+1 | Acum: plată/activare atomică, protecția ultimului loc, operații duplicate, indexuri și integritate. SoftDeletes/Prunable doar după politica de păstrare a istoricului; nu confundăm anularea cu ștergerea. Concurența se verifică și pe motorul bazei aplicației, nu se consideră demonstrată doar prin SQLite în memorie. |
+| 12.1–12.6 arhitectură, DTO, enums, state machines, pipelines, module | Service Layer existent, Form Requests/Policies/Resources, enum-uri unde stările sunt finite, tranziții explicite. Nu rescriem în Actions, nu instalăm spatie/laravel-data/model-states și nu reorganizăm pe domenii pentru bifarea cursului. DTO/value objects/pipeline doar dacă simplifică o nevoie concretă. |
+| 12.7 Artisan; 12.8 JSON:API | Comenzi proprii doar la nevoie; seeders existenți pentru date. Păstrăm API Resources convenționale, fără migrare la standardul JSON:API. |
+| 13.1–13.3 evenimente/notificări/mail | Recuperarea parolei și confirmările relevante folosesc mail/notificări locale. Events/listeners pentru reacții separate când există; după commit când depind de date persistate. Nu creăm mailables și fiecare canal fără un caz de utilizare. |
+| 13.4 Reverb; 13.5 webhooks | WebSockets amânate; reîmprospătarea normală a datelor este suficientă. Webhook bancar, semnătură și integrare externă amânate odată cu maib. Idempotența și verificarea rezultatului sunt necesare și în simulator. |
+| 14.1–14.7 cozi/scheduler/concurență | Cozi simple și retry/timeout doar pentru lucrări efectiv trimise în fundal; scheduler dacă introducem remindere/curățare. Valabilitatea accesului se calculează la cerere, fără dependență de un job de expirare. Redis/Horizon, batches/chains, priorități și Concurrency::run pot aștepta. Nu confundăm paralelizarea taskurilor cu blocarea DB a ultimului loc. |
+| 15.1–15.7 testare | Acum: PHPUnit existent, factories/states, fakes, cazuri de acces și eșec, Pint, verificarea fluxurilor în browser și pe telefon. Nu schimbăm frameworkul în Pest; mutation/architecture testing, Rector și aprofundarea analizei statice pot aștepta. Nu urmărim un procent arbitrar în locul regulilor importante. |
+| 16.1 storage; 16.2 media; 16.3 căutare | Upload validat pentru avatar și imagini locale; căutare/filtrare în baza existentă. MediaLibrary, S3/R2, Scout/Meilisearch/Typesense și conversii în coadă nu sunt condiții pentru aceste funcții. |
+| 16.4 Socialite; 16.5 Cashier; 16.6 Pennant; 16.7 localizare | Login social, Stripe/Paddle/recurring și feature flags amânate. Plata simulată nu necesită Cashier. UI în română și afișare corectă a datei/monedei; multilingvismul rămâne ulterior. |
+| 17 AI | Amânat integral ca funcționalitate de produs. |
+| 18 performanță/observabilitate | Acum: query-uri rezonabile, paginare, măsurători unde există probleme și loguri utile fără secrete. Cache avansat, Octane și platformele de monitorizare pot aștepta. Nu memorăm locurile disponibile în cache fără strategie de consistență. |
+| 19 DevOps | Acum: configurare locală repetabilă, secrete în afara codului și mod de testare clar. Docker avansat, cloud, zero-downtime, infrastructura workerilor și CI complex sunt ulterioare livrării locale. |
+| 20 proiect final | Fitline este proiectul integrator. Nu preluăm lista generică obligatorie de pachete/funcții din exercițiul PDF. |
+
+### Ordinea de execuție și punctele de control
+
+Ferestre orientative, nu estimări validate de efort; disponibilitatea zilnică nu este cunoscută. După fiecare flux verificăm ce rămâne, fără să mutăm toate testele și UI-ul în ultima săptămână.
+
+1. **24–29 noiembrie: cumpărare și abonament utilizabil.** Începem cu sala/planul din API în interfață, inițierea plății, simulator succes/refuz/anulare, istoric și activare unică. Refolosim MembershipAccessService. Salvăm suma/moneda și condițiile achiziției astfel încât schimbarea ofertei să nu rescrie comanda. Stabilim explicit momentul de început și politica achizițiilor suprapuse înainte de codul de activare.
+2. **30 noiembrie–6 decembrie: ședințe și rezervări.** Ședințe datate, filtrare pe zi/sală, descriere/capacitate, rezervare/anulare și lista proprie. Nu diferențiem accesul la ședințe după plan; verificăm abonamentul aceleiași săli și întregul interval permis. Decidem politica anulării înainte de implementarea operației. Testăm expirarea, intervalul orar, sala greșită, duplicatele și ultimul loc. Ordinea discutată ulterior în aceeași sesiune începe cu ședințele și rezervările, apoi cumpărarea simulată; ferestrele rămân orientative.
+3. **7–11 decembrie: QR și vizite.** Definim mecanismul demonstrativ local, apoi check-in/check-out, o vizită deschisă conform regulilor alese, acces permis până la ora calculată și istoric/durată. Ieșirea târzie înregistrează ora reală. Separăm QR-ul de acces de eventualul QR pentru plată.
+4. **12–15 decembrie: închiderea lipsurilor aplicației.** Profil/avatar/resetare parolă, căutare, cronometru persistent la refresh și date pentru istoricul/progresul jurnalului. Distribuim aceste operații și mai devreme unde interfața le cere. Definim indicatorii de progres din datele reale, fără grafice fictive sau antrenamente generate AI.
+5. **16–20 decembrie: integrare și corectări.** Parcurgem traseul complet de membru, erorile/reîncercările, separarea între utilizatori/săli, interfața pe telefon, resetarea datelor demonstrative și rularea locală repetabilă. Nu planificăm module noi majore în această fereastră.
+
+Un flux este închis când funcționează în interfață cu date din API, backendul aplică regulile inclusiv la cereri directe, cazurile importante sunt testate și utilizatorul poate explica responsabilitățile codului. Documentăm separat ce necesită aprofundare după livrare.
+
+## Priorități anterioare — 2026-11-23
 
 - Obiectivul cerut este aplicația completă pentru membri până la 20 decembrie 2026: cont/profil, catalog și căutare, abonamente/plată de test, program și rezervări/anulare, QR și vizite/check-in/check-out, jurnal/cronometrul antrenamentului, istoric și progres. Nu reducem cererea la un traseu de demo. Fezabilitatea și alegerea clientului mobil/procesatorului trebuie evaluate; data este țintă, nu o garanție.
 - CRM-ul nu este prioritatea acestei livrări. Pregătim relațiile și izolarea datelor pentru proprietari, administratori de sală, super administrator și antrenori. CRUD-ul, dashboardurile și interfețele lor așteaptă. Introducerea viitoare a antrenorului ca rol înlocuiește vechea limitare de viziune la simplu text pe ședință, fără să însemne că acel rol sau o schemă de personal sunt deja implementate.
@@ -28,7 +85,7 @@ Numele produsului a fost schimbat din Repwise în Fitline. Numele folderelor și
 - Planurile au nume, descriere, imagine opțională, preț în unități monetare minore și monedă. `60000 MDL` reprezintă 600,00 MDL; prețurile din seeders sunt exclusiv demonstrative.
 - `Membership` păstrează copia numelui, prețului, monedei, duratei și regulilor de acces de la activare. Dezactivarea ofertei nu anulează abonamentele deja acordate; dezactivarea sălii refuză accesul.
 - Modelul, relațiile, validarea programului, API-ul de consultare și seeders sunt implementate. Datele personale sunt limitate la utilizatorul autentificat; un abonament al altui utilizator răspunde 404.
-- Plata de test rămâne pentru etapa 16. Nu există endpoint de cumpărare sau activare gratuită. Abonamentul demonstrativ se creează doar prin seeder, în mediile local/testing, cu `is_demo=true`.
+- Stare implementată: nu există încă endpoint de cumpărare sau activare gratuită. Abonamentul demonstrativ se creează doar prin seeder, în mediile local/testing, cu `is_demo=true`. Din 2026-11-24 cumpărarea cu simulator Laravel este primul flux de construit, fără a aștepta etapa 16.
 - Alegerea separată a antrenamentelor/facilităților incluse este amânată. Serviciul verifică acum perioada, zilele, orele și programul sălii; conectarea lui la rezervări/check-in urmează când implementăm acele module.
 - `FitlineDemoSeeder` poate fi reluat fără duplicări: completează doar sălile demonstrative ale proprietarului „Proprietar Fitline Demo”, păstrează programul deja existent și nu prelungește abonamentul la rerulare. Creează 12 planuri per sală și un abonament pentru `member@fitline.example` (parolă demonstrativă `password`).
 - Rute noi, toate sub `/api/v1` și Sanctum: `GET gyms/{gym}`, `GET gyms/{gym}/membership-plans`, `GET gyms/{gym}/membership-plans/{membershipPlan}`, `GET memberships`, `GET memberships/{membership}`. Paginarea listelor acceptă `page >= 1` și `per_page` între 1 și 100.
@@ -49,7 +106,7 @@ Un proprietar poate deține mai multe săli. Fiecare sală are propriile planuri
 
 ## 2. Livrarea pentru prezentare
 
-Ținta discutată este aproximativ o lună; data exactă și timpul zilnic disponibil nu au fost stabilite. Aceasta este o prioritizare, nu o garanție de termen.
+Ținta este 20 decembrie 2026, aplicație web locală utilizabilă pe telefon. Timpul zilnic disponibil nu este stabilit; calendarul este o prioritizare, nu o garanție de termen.
 
 ### Inclus
 
@@ -59,12 +116,12 @@ Un proprietar poate deține mai multe săli. Fiecare sală are propriile planuri
 - Fotografii pentru săli (galerie) și o singură imagine de prezentare pentru fiecare plan de abonament. Numărul minim de imagini și obligativitatea la creare nu sunt încă stabilite.
 - Facilități și planuri de abonament per sală.
 - Programul pe zile, detalii și descrieri ale ședințelor.
-- Cumpărarea unui abonament printr-o integrare funcțională în mediul de test al procesatorului.
+- Cumpărarea unui abonament prin simulatorul de plăți Laravel, fără bancă.
 - Activarea abonamentului după verificarea confirmării plății.
 - Lista abonamentelor proprii și perioadele de acces.
 - Rezervare, lista rezervărilor proprii și anulare.
 - Check-in, check-out și durata vizitelor.
-- Verificarea valabilității, facilităților și programului permis de abonament.
+- Verificarea valabilității, sălii și programului permis de abonament, fără drepturi diferențiate pe ședințe/facilități.
 - Jurnalul personal existent, păstrat și expus în interfață.
 - Teste relevante pentru plăți, acces, rezervări și separarea datelor.
 
@@ -73,7 +130,7 @@ Un proprietar poate deține mai multe săli. Fiecare sală are propriile planuri
 - Panoul proprietarului/administratorului sălii.
 - Panoul unui administrator general al platformei.
 - CRUD-ul administrativ care nu este necesar fluxurilor livrate acum.
-- Încasarea banilor reali; pregătim integrarea în sandbox-ul furnizorului ales.
+- Încasarea banilor reali și integrarea sandbox maib/MIA; păstrăm o graniță de integrare prin contractul de plată.
 - AI — etapa 17 a cursului.
 - Aprofundarea performanței și observabilității — etapa 18, după fluxurile principale.
 - DevOps avansat — etapa 19. Dacă prezentarea cere acces online, un deploy de bază devine necesar separat.
@@ -83,7 +140,7 @@ Un proprietar poate deține mai multe săli. Fiecare sală are propriile planuri
 
 ### Pregătirea datelor fără panou administrativ
 
-Propunere acceptată ca direcție de lucru: seeders pentru proprietari demonstrativi, săli, facilități, planuri și ședințe. Pot exista și abonamente pentru teste, dar fluxul prezentat de cumpărare trebuie să funcționeze prin procesatorul de test.
+Propunere acceptată ca direcție de lucru: seeders pentru proprietari demonstrativi, săli, facilități, planuri și ședințe. Pot exista și abonamente pentru teste, dar fluxul prezentat de cumpărare trebuie să funcționeze prin simulatorul Laravel.
 
 Lipsa panoului nu elimină verificările backend. Nu generăm obligatoriu toate metodele CRUD pentru fiecare controller. Le adăugăm când implementăm funcționalitatea care le folosește.
 
@@ -172,7 +229,7 @@ Nu introducem automat generarea săptămânală recurentă a ședințelor. Datel
 
 - Toate verificările decisive sunt făcute în backend, nu doar prin ascunderea butoanelor.
 - Abonamentul trebuie să aparțină utilizatorului și să fie pentru sala corectă.
-- Verificăm perioada de valabilitate, facilitățile/ședințele incluse și programul permis.
+- Verificăm perioada de valabilitate, apartenența la aceeași sală și programul permis. În această versiune nu restrângem separat ședințele/facilitățile după plan.
 - Nu există limită lunară de participări sau sistem de credite în cerința curentă.
 - Capacitatea reprezintă limita de participanți a unei ședințe.
 - Descrierea unui plan este text pentru oameni. Drepturile efective sunt relații și date structurate, nu expresii extrase din descriere.
@@ -222,14 +279,14 @@ Checkout-ul de plată și check-out-ul unei vizite sunt operații diferite.
 
 ## 7. Plăți și cumpărarea abonamentului
 
-Pentru prezentare folosim mediul de test al unui procesator real, cu flux funcțional și fără bani reali. Procesatorul sau banca nu au fost alese.
+Decizie 2026-11-24: pentru prezentare folosim simulatorul propriu Laravel, cu flux funcțional și fără bani reali sau credențiale bancare. maib/MIA rămâne posibilă integrare ulterioară, fără să blocheze termenul.
 
 Fluxul urmărit:
 
 1. Membrul alege sala și planul.
 2. Backendul determină suma și moneda din datele proprii.
-3. Se înregistrează încercarea de plată și se începe checkout-ul procesatorului.
-4. Procesatorul confirmă rezultatul către backend prin mecanismul documentat de el, de regulă webhook verificat.
+3. Se înregistrează încercarea de plată și se afișează checkout-ul simulat, marcat ca atare.
+4. În local/testing, utilizatorul alege un rezultat de test. Backendul verifică actorul, plata, mediul și tranziția permisă; implementarea FakePaymentGateway furnizează rezultatul. Nu acceptăm arbitrar preț sau membership_id din frontend.
 5. Backendul verifică plata și activează abonamentul o singură dată.
 6. Membrul vede abonamentul și poate folosi accesul oferit.
 
@@ -237,7 +294,7 @@ Gestionăm și plata refuzată, abandonată sau încă în așteptare. Pagina de
 
 Păstrăm suma și moneda achitate în istoricul plății. Schimbarea prețului planului nu rescrie istoricul.
 
-Obiectivul este să putem trece ulterior în producție la același furnizor. Nu garantăm că este suficientă doar schimbarea credențialelor: pot fi necesare activarea contului, configurări și verificări de producție. Un alt furnizor poate necesita alt adaptor/cod.
+PaymentGateway separă serviciul de cumpărare de implementarea simulată. Pentru maib va fi necesar un adaptor propriu, acces de test și confirmări verificate conform documentației băncii. Simulatorul nu dovedește integrarea bancară și nu se transformă în plăți reale doar prin schimbarea credențialelor.
 
 Nu presupunem în această etapă reînnoire automată, plăți recurente, distribuirea banilor către proprietari, comisioane de platformă sau rambursări automate. Abonamentul de acces nu implică obligatoriu un subscription recurent la procesator.
 
@@ -322,7 +379,9 @@ Accesul începe la deschiderea sălii pentru ziua respectivă și se termină la
 
 `membership_plan_id`, `facility_id`, cu pereche unică. Reprezintă facilitățile incluse în plan. Ambele capete trebuie să aparțină aceleiași săli.
 
-### 9.6 `training_sessions` — propus
+### 9.6 `training_sessions` — baza de consultare implementată în cod, 2026-11-24
+
+Migration pregătită, fără rulare pe baza locală MySQL. Implementate: id, gym_id, name, description obligatorie, starts_at/ends_at UTC, capacity, cancelled_at, timestamps și index compus gym_id/starts_at. Câmpurile opționale despre antrenor din propunerea de mai jos și statusul separat nu au fost adăugate. Anularea este reprezentată prin cancelled_at. Mai jos rămâne schema conceptuală cu aceste distincții.
 
 | Câmp | Scop |
 |---|---|
@@ -430,7 +489,7 @@ Metodele administrative primesc Form Requests și autorizare; nu expunem create/
 
 ## 12. Direcția frontend
 
-- Clarificare de produs: membrul va folosi o aplicație instalabilă pe telefon; panoul proprietarului va fi web. Nu considerăm simpla accesare din browser drept livrarea mobilă cerută. Capacitor cu frontend React a fost discutat ca opțiune de reutilizare a UI-ului; tehnologia și platformele țintă nu sunt încă alese definitiv. Backendul Laravel rămâne pe server și expune API-ul. Alegerea/build-ul clientului mobil se abordează ulterior, fără a opri dezvoltarea backendului acum.
+- Decizie 2026-11-24: versiunea web pe telefon este suficientă pentru 20 decembrie; aplicația rulează local. Extindem frontendul React existent și API-ul Laravel. Capacitor, distribuția Android/iOS și hostingul public nu fac parte din această livrare. CRM-ul web rămâne ulterior.
 
 - Română; interfață responsive pentru desktop și mobil.
 - Navigare clară între săli, program, abonamente, rezervări, vizite și jurnal.
@@ -469,7 +528,7 @@ Actualizare de lucru 2026-11-23: lista de mai jos descrie dependențele funcțio
 |---|---|
 | Jurnal, catalog și filtrare | 11.1 accessors/mutators/casts, 11.2 scopes, 11.3 agregări; 11.7 interogări/indexuri și N+1 |
 | Clase, eligibilitate și rezervări | Relații Eloquent, Service Layer din 12 adaptat arhitecturii alese; 11.6 tranzacții și controlul concurenței; enums/stări din 12.3–12.4 când sunt utile |
-| Plăți și activarea abonamentelor | 13.5 webhooks și idempotență, integrare procesator din 16; contracte/bindings din 10 când avem adaptoare reale |
+| Plăți și activarea abonamentelor | Contracte/bindings din 10, tranzacții din 11.6, enum-uri/tranziții și idempotență în simulator; 13.5 webhooks bancare rămâne pentru integrarea externă ulterioară |
 | Confirmări și operații în fundal | 13.1–13.3 events/listeners/notificări/mail și elementele necesare din 14 pentru cozi, retry și scheduling |
 | Profil, imagini și căutare | Părțile relevante din 16 pentru storage, validare, căutare și localizare; alegem instrumentele după nevoie, nu impunem Scout/Cashier/MediaLibrary fără evaluare |
 | Orice flux livrat | 15 — teste relevante, factories, fakes/mocking și Pint; păstrăm PHPUnit și infrastructura existentă |
@@ -477,7 +536,7 @@ Actualizare de lucru 2026-11-23: lista de mai jos descrie dependențele funcțio
 
 Aceasta este maparea de lucru la produs, nu declararea tuturor subpunctelor drept învățate sau promisiunea instalării pachetelor din PDF. Reverb, Socialite, Horizon, custom casts și celelalte extensii se aleg explicit dacă rezolvă o nevoie. Încheiem o parte din curs când a fost explicată/aplicată, nu doar fiindcă există cod generat.
 
-### Succesiunea funcțională
+### Succesiunea funcțională anterioară — calendarul 2026-11-24 are prioritate
 
 1. Explicăm și definitivăm `Gym` și relația cu proprietarul; generăm model/migration/factory/seeder și verificăm.
 2. Facilități și listarea sălilor cu date demonstrative din MySQL.
@@ -486,7 +545,7 @@ Aceasta este maparea de lucru la produs, nu declararea tuturor subpunctelor drep
 5. Abonamente și verificarea eligibilității; putem pregăti date de test înainte de integrarea plății.
 6. Rezervări, anulare, capacitate și concurență.
 7. Vizite, check-in/check-out, durată și limită orară.
-8. Integrarea procesatorului în sandbox și activarea după confirmarea plății; fluxul de cumpărare face parte din prezentare.
+8. Cumpărare cu simulator Laravel și activare unică; din 2026-11-24 acest flux este mutat la început, conform calendarului actualizat de sus.
 9. Integrarea frontendului se face progresiv pentru fluxurile gata, inclusiv jurnalul existent.
 10. Verificarea completă a demonstrației și corectări, cu timp păstrat pentru integrare.
 
@@ -496,9 +555,9 @@ Etapa 10.1 a fost verificată practic. Din 10.2 au fost demonstrate auto-resolut
 
 ## 14. Întrebări rămase înainte de implementarea părților respective
 
-- Disponibilitatea zilnică și dacă demonstrația trebuie să fie online; data țintă cerută este 20 decembrie 2026.
-- Procesatorul/banca, țara contului comercial și moneda; cui îi revin încasările în versiunea reală cu mai mulți proprietari.
-- Activarea în fluxul real va fi legată de confirmarea plății la etapa 16; durata fixă în zile este confirmată.
+- Disponibilitatea zilnică; ținta este 20 decembrie 2026, web pe telefon/local, fără obligație de deploy online.
+- Pentru integrarea comercială ulterioară: procesatorul/banca, țara contului comercial și destinația încasărilor. Nu blochează simulatorul local; moneda datelor demonstrative este MDL.
+- Activarea în simulator este legată de rezultatul procesat în backend; durata fixă în zile este confirmată. Alegem momentul de început pentru cumpărare și politica suprapunerii înainte de implementare.
 - Dacă pot exista simultan mai multe abonamente valabile ale aceluiași membru în aceeași sală și cum alegem unul pentru acces.
 - Condițiile deja cumpărate când proprietarul modifică oferta planului.
 - Programul săptămânal și restricțiile planurilor sunt confirmate mai sus; sărbătorile și intervalele nocturne nu sunt incluse.
@@ -507,7 +566,7 @@ Etapa 10.1 a fost verificată practic. Din 10.2 au fost demonstrate auto-resolut
 - Politica vizitelor rămase deschise și cine le poate corecta ulterior; nu auto-completăm ieșiri fictive.
 - Mecanismul de check-in/check-out din UI pentru demonstrație; nu presupunem dovada prezenței fizice prin simplul buton.
 - Relația proprietar–săli există prin `users → gyms.owner_id`. Pentru viitorul CRM trebuie definit separat personalul/adminii/antrenorii per sală și atribuirea antrenorilor la ședințe; nu presupunem coproprietate sau drepturi globale pentru un simplu rol.
-- Alegerea finală a pivotului explicit plan–ședință versus reguli pe categorii, înainte de implementarea accesului.
+- Drepturile plan–ședință/plan–facilitate sunt amânate explicit la 2026-11-24; alegerea pivoturilor sau categoriilor nu blochează rezervările actuale.
 
 Nu transformăm aceste întrebări în cerințe suplimentare implementate automat. Le rezolvăm când devin necesare, păstrând documentul actualizat.
 
