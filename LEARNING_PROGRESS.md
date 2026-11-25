@@ -1,6 +1,17 @@
 # Fitline — progres de învățare
 
-Actualizat: 2026-11-24.
+Actualizat: 2026-11-25.
+
+## Reluare după sesiunea 2026-11-25 — are prioritate față de istoricul de mai jos
+
+- Utilizatorul a cerut explicit lucru pas cu pas: asistentul explică, utilizatorul scrie codul, apoi verificăm. Nu continuăm autonom implementarea întregului modul. Prioritatea aplicației până la 20 decembrie rămâne; conceptele se explică în context.
+- Booking: migration cu user_id/training_session_id, chei externe restrictive, timestamps și unicitate ședință–utilizator; fără membership_id/status/cancelled_at. Relațiile Booking.user/trainingSession, TrainingSession.bookings și User.bookings sunt scrise și au fost verificate prin citire și php -l. La anularea rezervării ștergem rândul; rezervările trecute neanulate rămân în istoric. Rezervarea nu dovedește prezența efectivă.
+- Utilizatorul a furnizat migrate:status cu training_sessions Ran și apoi rezultatul migrate cu create_bookings_table și make_training_session_capacity_nullable DONE. Capacitatea null reprezintă participanți nelimitați; rezervarea este necesară și pentru aceste ședințe. Nu s-au rulat teste funcționale noi pentru rezervări și nu există încă API de rezervare complet.
+- Flux confirmat final: utilizatorul selectează abonamentul, vede sala/programul lui, iar frontendul transmite membership_id în JSON la rezervare. ID-ul se folosește doar la verificare, nu se salvează în bookings. Backendul ia utilizatorul din autentificare, caută abonamentul doar printre ale lui, compară sala și verifică întregul interval prin MembershipAccessService. Varianta hasEligibleMembership care caută automat prin toate abonamentele este înlocuită.
+- StoreBookingRequest este completat: authorize verifică user !== null; membership_id required/integer/min:1. Explicate validarea înainte de controller, diferența față de middleware/Policy, constructor property promotion, injectarea dependențelor, relațiile și eager loading. Explicațiile nu dovedesc automat înțelegerea tuturor conceptelor.
+- Punct exact de reluare: am explicat integral ensureMembershipAllowsSession (findOrFail pe relația utilizatorului → aceeași sală → allowsInterval → ValidationException; void înseamnă succes fără rezultat, eșec prin excepție). Utilizatorul a scris o variantă încă necorectată în BookingService: ensureMemberhipAllowsSession este public și are numele scris greșit, findOrFail folosește $membershipID în loc de $membershipId, accesul folosește $this->membershipAccesService în loc de $this->membershipAccessService, lipsește importul Illuminate\Validation\ValidationException și lipsesc acoladele if-ului. Mâine începem cu explicarea/corectarea acestor diferențe, fără editare autonomă. Apoi construim create, tranzacția/lockForUpdate, verificările ședinței/duplicatelor/capacității, salvarea, controller/rute/resource și teste, pas cu pas.
+- TrainingSchedule/generare recurentă acceptate ca direcție: proprietarul configurează programul, aplicația generează ședințe datate fără duplicate. Fereastra de generare și regulile modificării programului nu sunt încă stabilite. Terminăm Booking înainte de schedule; nu este necesar pentru a rezerva ședințele demo existente. Un singur abonament valabil simultan per membru/sală este regula dorită; reînnoirea anticipată și aplicarea regulii la cumpărare nu sunt încă implementate.
+- Oprire la cererea utilizatorului: revine mâine. Documentele au fost actualizate fără modificarea codului aplicației la încheiere, fără migrări noi, commit sau push.
 
 Planul principal al produsului și schema de date propusă: [FITLINE_PLAN.md](FITLINE_PLAN.md). Acest fișier păstrează progresul de învățare și istoricul verificărilor; intrările vechi despre pași propuși nu înlocuiesc starea curentă din plan.
 

@@ -1,6 +1,19 @@
 # Fitline — planul aplicației
 
-Actualizat: 2026-11-24.
+Actualizat: 2026-11-25.
+
+## Decizii și stare curentă — 2026-11-25
+
+Aceste clarificări au prioritate față de propunerile istorice de mai jos.
+
+- Lucrăm pas cu pas la cererea explicită a utilizatorului: explicație, implementare manuală, verificare. Prioritatea rămâne aplicația pentru membri până la 20 decembrie.
+- Fluxul rezervării: abonament selectat în UI → programul sălii lui → ședință aleasă → membership_id obligatoriu în JSON. Backendul verifică proprietatea abonamentului selectat, aceeași sală și întregul interval prin MembershipAccessService, plus disponibilitatea/duplicatele/starea ședinței. Nu caută un alt abonament ca substitut pentru selecția utilizatorului.
+- bookings conține id, user_id, training_session_id și timestamps, cu pereche unică ședință–utilizator și chei externe restrictive. Nu salvăm membership_id, status sau cancelled_at. Anularea șterge rezervarea și eliberează locul; rezervările trecute neanulate rămân. Aceste date măsoară rezervări, nu prezență efectivă.
+- Anulare manuală înainte de începerea ședinței, fără penalizări; re-rezervare cu verificările obișnuite. Discutată eliminarea rezervărilor viitoare fără acces după anularea unui abonament; mecanismul trebuie adaptat lipsei membership_id și nu este implementat. Nu pretindem că există deja anularea abonamentelor sau eliberarea automată a locurilor.
+- capacity = null înseamnă fără limită; înscrierea prin Booking rămâne necesară și atunci, pentru lista membrului și consultarea ulterioară a activității de către proprietar.
+- Cel mult un abonament valabil simultan per membru și sală; istoric distinct permis. Aplicarea regulii la cumpărare și reînnoirea anticipată rămân de implementat/definit.
+- Program recurent acceptat: o regulă TrainingSchedule va produce automat TrainingSession distincte pe date concrete, cu propriile rezervări/capacități. Înlocuiește amânarea anterioară a recurenței. Generarea în avans este direcția aleasă; numărul de săptămâni, scheduling-ul și tratarea modificărilor/excepțiilor se stabilesc înainte de implementare. Terminăm rezervările pe ședințele existente, apoi construim schedule-ul.
+- TrainingSession migration era deja Ran; utilizatorul a confirmat prin ieșirea Artisan aplicarea migrărilor bookings și capacity nullable. Relațiile sunt completate, StoreBookingRequest este scris, BookingService are constructor și verificarea abonamentului în lucru (cu greșeli de corectat la reluare). Controllerul/rutele/resource-ul/factory/seeder/testele Booking generate ca schelete nu sunt funcționalități complete. Fără teste noi de comportament, UI sau verificare a concurenței în această sesiune. Detaliile reluării sunt în LEARNING_PROGRESS.md.
 
 Document principal pentru cerințele produsului, structura funcțională și schema propusă a bazei de date. Îl actualizăm când se schimbă deciziile. `LEARNING_PROGRESS.md` urmărește învățarea și verificările; `rewpise.md` păstrează brief-ul pentru design/Lovable.
 
