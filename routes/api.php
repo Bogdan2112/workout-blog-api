@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ExerciseController;
 use App\Http\Controllers\GymController;
 use App\Http\Controllers\MembershipController;
@@ -146,7 +147,14 @@ Route::prefix('v1')
                 'message' => 'Request accepted',
             ]);
         })->middleware('throttle:api');
-
+        // /
+        Route::post('/gyms/{gym}/training-sessions/{trainingSession}/bookings', [BookingController::class, 'store'])
+            ->whereNumber(['gym', 'trainingSession'])
+            ->scopeBindings()
+            ->name('bookings.store');
+        Route::delete('/bookings/{booking}', [BookingController::class, 'destroy'])
+            ->whereNumber('booking')
+            ->name('bookings.destroy');
     });
 
 Route::prefix('v2')

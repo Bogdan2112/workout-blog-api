@@ -6,6 +6,7 @@ use App\Models\Booking;
 use App\Models\TrainingSession;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -75,6 +76,7 @@ class BookingService
         }
     }
 
+    // DB operations
     public function create(
         User $user,
         TrainingSession $trainingSession,
@@ -106,5 +108,37 @@ class BookingService
 
             return $booking;
         });
+    }
+
+    public function cancel(User $user, int $bookingId): void
+    {
+        DB::transaction(function () use ($user, $bookingId): void {
+            $booking = $user->bookings()->findOrFail($bookingId);
+
+            $session = TrainingSession::query()
+                ->lockForUpdate()
+                ->findOrfail($booking->training_session_id);
+
+            if ($session->starts_at->lessThanOrEqualTo(CarbonImmutable::now('UTC'))) {
+                throw ValidationException::withMessages([
+                    'booking' => 'Rezervarea poate fi anulata doar inainte de inceperea sedintei',
+                ]);
+            }
+
+            $booking->delete();
+        });
+    }
+
+    //
+    public function listForUser(
+        User $user,
+        int $perPage = 15,
+        int $page = 1,
+    ): LengthAwarePaginator {
+        return $user->bookings()
+            ->with('trainingSession.gym')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->paginate($perPage, ['*'], 'page', $page);
     }
 }
